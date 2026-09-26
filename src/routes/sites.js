@@ -36,11 +36,22 @@ router.post('/api/sites', requireOwnerAuth, async (req, res) => {
 
 router.get('/api/sites', requireOwnerAuth, async (req, res) => {
   const sites = await db.all(
-    'SELECT id, name, public_key as publicKey, created_at as createdAt FROM sites WHERE owner_id = ? ORDER BY created_at DESC',
+    'SELECT id, name, public_key as "publicKey", created_at as "createdAt" FROM sites WHERE owner_id = ? ORDER BY created_at DESC',
     [req.owner.id]
   );
   res.writeHead(200, { 'Content-Type': 'application/json' });
   res.end(JSON.stringify({ sites }));
+});
+
+router.delete('/api/sites/:id', requireOwnerAuth, async (req, res) => {
+  const site = await loadOwnedSite(req);
+  // Postgres enforces the FK constraints on members/content_blocks -> sites,
+  // so child rows must go first or the delete is rejected outright.
+  await db.run('DELETE FROM content_blocks WHERE site_id = ?', [site.id]);
+  await db.run('DELETE FROM members WHERE site_id = ?', [site.id]);
+  await db.run('DELETE FROM sites WHERE id = ?', [site.id]);
+  res.writeHead(200, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify({ ok: true }));
 });
 
 async function loadOwnedSite(req) {
@@ -55,7 +66,7 @@ async function loadOwnedSite(req) {
 router.get('/api/sites/:id/members', requireOwnerAuth, async (req, res) => {
   const site = await loadOwnedSite(req);
   const members = await db.all(
-    'SELECT id, email, plan, created_at as createdAt FROM members WHERE site_id = ? ORDER BY created_at DESC',
+    'SELECT id, email, plan, created_at as "createdAt" FROM members WHERE site_id = ? ORDER BY created_at DESC',
     [site.id]
   );
   res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -84,7 +95,7 @@ router.patch('/api/sites/:id/members/:memberId', requireOwnerAuth, async (req, r
 router.get('/api/sites/:id/stats', requireOwnerAuth, async (req, res) => {
   const site = await loadOwnedSite(req);
   const [members, contentBlockCount] = await Promise.all([
-    db.all('SELECT email, plan, created_at as createdAt FROM members WHERE site_id = ? ORDER BY created_at DESC', [
+    db.all('SELECT email, plan, created_at as "createdAt" FROM members WHERE site_id = ? ORDER BY created_at DESC', [
       site.id,
     ]),
     db.get('SELECT COUNT(*) as count FROM content_blocks WHERE site_id = ?', [site.id]),
@@ -127,7 +138,7 @@ router.get('/api/sites/:id/stats', requireOwnerAuth, async (req, res) => {
 router.get('/api/sites/:id/content', requireOwnerAuth, async (req, res) => {
   const site = await loadOwnedSite(req);
   const blocks = await db.all(
-    'SELECT id, key, plan_required as planRequired, body, created_at as createdAt FROM content_blocks WHERE site_id = ? ORDER BY created_at DESC',
+    'SELECT id, key, plan_required as "planRequired", body, created_at as "createdAt" FROM content_blocks WHERE site_id = ? ORDER BY created_at DESC',
     [site.id]
   );
   res.writeHead(200, { 'Content-Type': 'application/json' });

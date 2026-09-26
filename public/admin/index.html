@@ -40,9 +40,9 @@
     }
 
     .topbar-inner {
-      max-width: 860px;
+      max-width: 1320px;
       margin: 0 auto;
-      padding: 14px 20px;
+      padding: 14px 15px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -59,9 +59,9 @@
     }
 
     .container {
-      max-width: 860px;
+      max-width: 1320px;
       margin: 0 auto;
-      padding: 32px 20px 60px;
+      padding: 32px 15px 60px;
     }
 
     h1 {
@@ -966,13 +966,37 @@
       }
       sites.forEach((s) => {
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${s.name}</td><td><code>${s.publicKey}</code></td><td><button data-id="${s.id}" class="manage-btn secondary">Manage</button></td>`;
+        tr.innerHTML = `<td>${s.name}</td><td><code>${s.publicKey}</code></td><td class="row" style="justify-content:flex-end">
+            <button data-id="${s.id}" class="manage-btn secondary">Manage</button>
+            <button data-id="${s.id}" data-name="${s.name}" class="delete-site-btn ghost" style="color:var(--danger)">Delete</button>
+          </td>`;
         tbody.appendChild(tr);
       });
       document.querySelectorAll('.manage-btn').forEach((btn) => {
         btn.onclick = () => openSite(btn.getAttribute('data-id'));
       });
+      document.querySelectorAll('.delete-site-btn').forEach((btn) => {
+        btn.onclick = () => deleteSite(btn.getAttribute('data-id'), btn.getAttribute('data-name'));
+      });
       await renderSitesUsage();
+    }
+
+    async function deleteSite(id, name) {
+      const confirmed = window.confirm(
+        `Delete "${name}"? This permanently removes the site, its members, and its gated content. This can't be undone.`
+      );
+      if (!confirmed) return;
+      document.getElementById('create-site-error').textContent = '';
+      try {
+        await req(`/api/sites/${id}`, { method: 'DELETE' });
+        if (activeSiteId === id) {
+          document.getElementById('site-detail').style.display = 'none';
+          activeSiteId = null;
+        }
+        await loadSites();
+      } catch (e) {
+        document.getElementById('create-site-error').textContent = e.message;
+      }
     }
 
     async function renderSitesUsage() {

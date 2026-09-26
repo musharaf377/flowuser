@@ -4,7 +4,16 @@
 // manual require-swapping needed. Mirrors db.sqlite.js's exports (run/get/
 // all), just async since the `pg` driver is async.
 
-const { Pool } = require('pg');
+const { Pool, types } = require('pg');
+
+// pg returns BIGINT (OID 20) as a string by default, to avoid silent
+// precision loss outside JS's safe integer range. Every BIGINT column in
+// this app is an epoch-ms timestamp, which fits safely in a JS number
+// (safe up to year ~285,000), so parse it as one — otherwise things like
+// `new Date(row.createdAt)` silently produce "Invalid Date" instead of
+// throwing, since Date's single-arg constructor treats a numeric STRING as
+// a date string to parse, not a timestamp to use.
+types.setTypeParser(20, (val) => parseInt(val, 10));
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
