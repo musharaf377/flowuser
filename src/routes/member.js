@@ -10,6 +10,7 @@ const {
   requireMemberAuth,
   optionalMemberAuth,
 } = require('../middleware');
+const { getPlan } = require('../plans');
 
 const router = new Router();
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -29,19 +30,26 @@ router.post('/api/m/:publicKey/signup', loadSiteByPublicKey, async (req, res) =>
   if (!email || !EMAIL_RE.test(email)) throw httpError(400, 'Valid email required');
   if (!password || password.length < 8) throw httpError(400, 'Password must be at least 8 characters');
 
-  const existing = db.get('SELECT id FROM members WHERE site_id = ? AND email = ?', [
+  const existing = await db.get('SELECT id FROM members WHERE site_id = ? AND email = ?', [
     req.site.id,
     email.toLowerCase(),
   ]);
   if (existing) throw httpError(409, 'An account with this email already exists');
 
+  const owner = await db.get('SELECT plan FROM owners WHERE id = ?', [req.site.owner_id]);
+  const plan = getPlan(owner.plan);
+  const { count } = await db.get('SELECT COUNT(*) as count FROM members WHERE site_id = ?', [req.site.id]);
+  if (count >= plan.maxMembersPerSite) {
+    throw httpError(403, 'This site has reached its member limit for the current plan. Contact the site owner.');
+  }
+
   const id = auth.randomId('mem_');
-  db.run(
+  await db.run(
     'INSERT INTO members (id, site_id, email, password_hash, plan, created_at) VALUES (?, ?, ?, ?, ?, ?)',
     [id, req.site.id, email.toLowerCase(), auth.hashPassword(password), 'free', Date.now()]
   );
 
-  const member = db.get('SELECT * FROM members WHERE id = ?', [id]);
+  const member = await db.get('SELECT * FROM members WHERE id = ?', [id]);
   const token = auth.sign({ sub: id, siteId: req.site.id, type: 'member' }, JWT_SECRET);
   res.writeHead(201, { 'Content-Type': 'application/json' });
   res.end(JSON.stringify({ token, member: memberOut(member) }));
@@ -51,7 +59,7 @@ router.post('/api/m/:publicKey/login', loadSiteByPublicKey, async (req, res) => 
   const { email, password } = req.body;
   if (!email || !password) throw httpError(400, 'Email and password required');
 
-  const member = db.get('SELECT * FROM members WHERE site_id = ? AND email = ?', [
+  const member = await db.get('SELECT * FROM members WHERE site_id = ? AND email = ?', [
     req.site.id,
     String(email).toLowerCase(),
   ]);
@@ -77,7 +85,7 @@ router.get(
   loadSiteByPublicKey,
   optionalMemberAuth,
   async (req, res) => {
-    const block = db.get('SELECT * FROM content_blocks WHERE site_id = ? AND key = ?', [
+    const block = await db.get('SELECT * FROM content_blocks WHERE site_id = ? AND key = ?', [
       req.site.id,
       req.params.key,
     ]);

@@ -1,11 +1,11 @@
-// db.js — storage layer.
+// db.sqlite.js — local storage backend, using Node's built-in `node:sqlite`
+// (zero cost, zero setup, a single file on disk).
 //
-// Right now this uses Node's built-in `node:sqlite` (zero cost, zero setup,
-// a single file on disk). When you buy real hosting and want a proper
-// managed database, replace the body of each function in this file with
-// equivalent calls using the `pg` package against Postgres (e.g. Neon or
-// Render Postgres). Nothing outside this file talks to the database
-// directly, so that swap stays contained to this one module.
+// This is picked automatically by db.js when DATABASE_URL isn't set — good
+// for local dev, but NOT for Render's free tier: that disk is ephemeral and
+// gets wiped on every redeploy/restart, so any data stored here disappears.
+// For anything you want to keep, set DATABASE_URL (see db.postgres.js) and
+// db.js will route to Postgres instead — no other code needs to change.
 
 const path = require('node:path');
 const fs = require('node:fs');

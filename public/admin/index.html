@@ -69,12 +69,13 @@
     <button class="secondary" id="logout-btn">Log out</button>
   </div>
 
-  <h2>Your sites</h2>
+  <h2>Your sites <span class="muted" id="sites-usage"></span></h2>
   <div class="card">
     <div class="row">
       <input id="new-site-name" placeholder="Site name (e.g. My Webflow Site)">
       <button id="create-site-btn">Create site</button>
     </div>
+    <div id="create-site-error" class="error"></div>
     <table id="sites-table">
       <thead><tr><th>Name</th><th>Public key</th><th></th></tr></thead>
       <tbody></tbody>
@@ -123,6 +124,16 @@ let token = localStorage.getItem('fm_admin_token') || null;
 let currentOwner = null;
 let sites = [];
 let activeSiteId = null;
+let plansConfig = null;
+
+async function loadPlansConfig() {
+  if (!plansConfig) plansConfig = await req('/api/plans');
+  return plansConfig;
+}
+
+function planFor(planId) {
+  return plansConfig.plans[planId] || plansConfig.plans[plansConfig.defaultPlan];
+}
 
 function authHeaders() {
   return token ? { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' };
@@ -145,8 +156,8 @@ async function showWelcome() {
   const list = document.getElementById('welcome-plan-features');
   list.innerHTML = '';
   try {
-    const data = await req('/api/plans');
-    const plan = data.plans[currentOwner.plan] || data.plans[data.defaultPlan];
+    await loadPlansConfig();
+    const plan = planFor(currentOwner.plan);
     const lines = [
       `${plan.maxSites} site${plan.maxSites === 1 ? '' : 's'}`,
       `Up to ${plan.maxMembersPerSite} members`,
@@ -206,9 +217,14 @@ document.getElementById('logout-btn').onclick = () => {
 document.getElementById('create-site-btn').onclick = async () => {
   const name = document.getElementById('new-site-name').value.trim();
   if (!name) return;
-  await req('/api/sites', { method: 'POST', body: JSON.stringify({ name }) });
-  document.getElementById('new-site-name').value = '';
-  await loadSites();
+  document.getElementById('create-site-error').textContent = '';
+  try {
+    await req('/api/sites', { method: 'POST', body: JSON.stringify({ name }) });
+    document.getElementById('new-site-name').value = '';
+    await loadSites();
+  } catch (e) {
+    document.getElementById('create-site-error').textContent = e.message;
+  }
 };
 
 async function loadSites() {
@@ -224,6 +240,20 @@ async function loadSites() {
   document.querySelectorAll('.manage-btn').forEach((btn) => {
     btn.onclick = () => openSite(btn.getAttribute('data-id'));
   });
+  await renderSitesUsage();
+}
+
+async function renderSitesUsage() {
+  await loadPlansConfig();
+  const plan = planFor(currentOwner.plan);
+  const atLimit = sites.length >= plan.maxSites;
+  document.getElementById('sites-usage').textContent =
+    `(${sites.length} / ${plan.maxSites} site${plan.maxSites === 1 ? '' : 's'} used)`;
+  document.getElementById('create-site-btn').disabled = atLimit;
+  document.getElementById('new-site-name').disabled = atLimit;
+  document.getElementById('new-site-name').placeholder = atLimit
+    ? `Site limit reached on the ${plan.name} plan`
+    : 'Site name (e.g. My Webflow Site)';
 }
 
 async function openSite(id) {
@@ -296,9 +326,13 @@ document.getElementById('save-block-btn').onclick = async () => {
 async function boot() {
   if (!token) return show('auth');
   try {
+    if (!currentOwner) {
+      const data = await req('/api/owner/me');
+      currentOwner = data.owner;
+    }
     await loadSites();
     show('app');
-    document.getElementById('whoami').textContent = currentOwner ? currentOwner.email : '';
+    document.getElementById('whoami').textContent = currentOwner.email;
   } catch (e) {
     token = null;
     localStorage.removeItem('fm_admin_token');

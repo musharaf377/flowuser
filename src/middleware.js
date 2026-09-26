@@ -101,22 +101,22 @@ function requireOwnerAuth(req, res, next) {
 }
 
 // ---- resolve a site from its public key (path param) ----
-function loadSiteByPublicKey(req, res, next) {
-  const site = db.get('SELECT * FROM sites WHERE public_key = ?', [req.params.publicKey]);
+async function loadSiteByPublicKey(req, res, next) {
+  const site = await db.get('SELECT * FROM sites WHERE public_key = ?', [req.params.publicKey]);
   if (!site) return next(httpError(404, 'Unknown site'));
   req.site = site;
   next();
 }
 
 // ---- member auth, scoped to the resolved site ----
-function requireMemberAuth(req, res, next) {
+async function requireMemberAuth(req, res, next) {
   const header = req.headers['authorization'] || '';
   const token = header.startsWith('Bearer ') ? header.slice(7) : null;
   const payload = token && auth.verify(token, JWT_SECRET);
   if (!payload || payload.type !== 'member' || payload.siteId !== req.site.id) {
     return next(httpError(401, 'Not authenticated'));
   }
-  const member = db.get('SELECT * FROM members WHERE id = ? AND site_id = ?', [
+  const member = await db.get('SELECT * FROM members WHERE id = ? AND site_id = ?', [
     payload.sub,
     req.site.id,
   ]);
@@ -126,12 +126,12 @@ function requireMemberAuth(req, res, next) {
 }
 
 // same as above, but doesn't fail if there's no token (member optional)
-function optionalMemberAuth(req, res, next) {
+async function optionalMemberAuth(req, res, next) {
   const header = req.headers['authorization'] || '';
   const token = header.startsWith('Bearer ') ? header.slice(7) : null;
   const payload = token && auth.verify(token, JWT_SECRET);
   if (payload && payload.type === 'member' && payload.siteId === req.site.id) {
-    req.member = db.get('SELECT * FROM members WHERE id = ? AND site_id = ?', [
+    req.member = await db.get('SELECT * FROM members WHERE id = ? AND site_id = ?', [
       payload.sub,
       req.site.id,
     ]);

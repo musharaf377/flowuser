@@ -82,21 +82,20 @@ before you show this to anyone but yourself.
 ⚠️ **Important limitation of the free tier:** Render's free web services
 have an *ephemeral* disk — the SQLite file is wiped whenever the service
 redeploys or restarts (including its automatic sleep/wake on the free
-plan). This is fine for testing the whole flow live, but **don't rely on it
-for real members' data yet.** Two ways to fix this when you're ready:
+plan). If you notice sites/members you created disappearing after a while,
+this is why — it's not a bug, it's the free-tier disk.
 
-- **Cheapest fix:** upgrade to Render's smallest paid instance and attach a
-  persistent Disk — then your SQLite file survives restarts.
-- **Recommended for real use:** switch to a real hosted database. See
-  `src/db.postgres.js` — it's a ready-to-go Postgres version of the storage
-  layer (works with a free [Neon](https://neon.tech) database). It needs
-  `npm install pg` (that install couldn't be tested from this sandbox
-  because of network restrictions here, but `pg` is the standard, widely
-  used Postgres driver — it will install normally on your machine or on
-  Render). To switch: install `pg`, set `DATABASE_URL` in your environment,
-  and point the `require('./db')` lines in `src/routes/*.js` and
-  `src/server.js` at `db.postgres.js` instead. Note its functions are
-  `async` (add `await`), unlike the SQLite version.
+**Fix (recommended, still free):** set the `DATABASE_URL` env var to a free
+[Neon](https://neon.tech) Postgres connection string (Render dashboard →
+your service → Environment). `src/db.js` automatically switches to
+`src/db.postgres.js` whenever `DATABASE_URL` is set — no code changes
+needed, no manual file-swapping. Without it, the app falls back to the
+local SQLite file, which is fine for local dev but not for anything you
+want to keep on Render's free tier.
+
+Alternative: upgrade to Render's smallest paid instance and attach a
+persistent Disk — then the SQLite file itself survives restarts and you can
+skip Postgres entirely.
 
 ## When you're ready to buy real hosting
 
