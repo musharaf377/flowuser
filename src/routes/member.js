@@ -22,7 +22,7 @@ function planSatisfies(memberPlan, required) {
 }
 
 function memberOut(m) {
-  return { id: m.id, email: m.email, plan: m.plan };
+  return { id: m.id, email: m.email, plan: m.plan, createdAt: m.created_at };
 }
 
 router.post('/api/m/:publicKey/signup', loadSiteByPublicKey, async (req, res) => {
@@ -76,6 +76,41 @@ router.get('/api/m/:publicKey/me', loadSiteByPublicKey, requireMemberAuth, async
   res.writeHead(200, { 'Content-Type': 'application/json' });
   res.end(JSON.stringify({ member: memberOut(req.member) }));
 });
+
+// Public — just the site's display name, so a member-facing page (e.g. the
+// member dashboard) can greet visitors by site instead of looking generic.
+// Nothing sensitive: a visitor on the Webflow site already sees this name.
+router.get('/api/m/:publicKey/site', loadSiteByPublicKey, async (req, res) => {
+  res.writeHead(200, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify({ name: req.site.name }));
+});
+
+// List content blocks for the member dashboard. Locked blocks' bodies are
+// withheld (same boundary as the single-block fetch below) — only the key
+// and the plan required are exposed, so a member can see what upgrading
+// would unlock without the actual premium content leaking.
+router.get(
+  '/api/m/:publicKey/content',
+  loadSiteByPublicKey,
+  optionalMemberAuth,
+  async (req, res) => {
+    const blocks = await db.all('SELECT * FROM content_blocks WHERE site_id = ? ORDER BY created_at DESC', [
+      req.site.id,
+    ]);
+    const memberPlan = req.member ? req.member.plan : null;
+    const out = blocks.map((b) => {
+      const unlocked = planSatisfies(memberPlan, b.plan_required);
+      return {
+        key: b.key,
+        planRequired: b.plan_required,
+        unlocked,
+        body: unlocked ? b.body : null,
+      };
+    });
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ blocks: out }));
+  }
+);
 
 // Gated content: the SDK fetches this instead of relying on client-side
 // hide/show, so the actual protected text never reaches a visitor's browser

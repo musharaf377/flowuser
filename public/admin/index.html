@@ -189,6 +189,13 @@
     </div>
 
     <div class="card">
+      <h2>Member dashboard link</h2>
+      <p class="muted">Link to this from your Webflow site (e.g. a "My Account" nav item) so members can view their plan and access — a self-service page you don't have to build.</p>
+      <pre id="member-link"></pre>
+      <button class="secondary" id="copy-member-link-btn" style="margin-top:10px">Copy link</button>
+    </div>
+
+    <div class="card">
       <h2>Members <span class="muted" id="members-count"></span></h2>
       <table id="members-table">
         <thead><tr><th>Email</th><th>Plan</th><th>Joined</th><th></th></tr></thead>
@@ -419,6 +426,7 @@ async function openSite(id) {
 `<script src="${origin}/sdk/flowmember.js"
         data-site-id="${site.publicKey}"
         data-api="${origin}"><\/script>`;
+  document.getElementById('member-link').textContent = `${origin}/member?site=${site.publicKey}`;
 
   await loadMembers(id);
   await loadBlocks(id);
@@ -434,6 +442,18 @@ document.getElementById('copy-embed-btn').onclick = async () => {
     setTimeout(() => { btn.textContent = original; }, 1500);
   } catch (e) {
     // clipboard permission denied or unavailable — the snippet is still selectable by hand
+  }
+};
+
+document.getElementById('copy-member-link-btn').onclick = async () => {
+  const btn = document.getElementById('copy-member-link-btn');
+  try {
+    await navigator.clipboard.writeText(document.getElementById('member-link').textContent);
+    const original = btn.textContent;
+    btn.textContent = 'Copied!';
+    setTimeout(() => { btn.textContent = original; }, 1500);
+  } catch (e) {
+    // clipboard permission denied or unavailable — the link is still selectable by hand
   }
 };
 
