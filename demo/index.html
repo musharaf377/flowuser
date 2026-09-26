@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Demo Webflow-style site</title>
+<style>
+  body { font-family: sans-serif; max-width: 600px; margin: 40px auto; }
+  input, button { font: inherit; padding: 6px; margin: 4px 0; display: block; width: 100%; }
+  .box { border: 1px solid #ddd; padding: 16px; margin-bottom: 16px; border-radius: 8px; }
+</style>
+</head>
+<body>
+<h1>My "Webflow" Site (demo)</h1>
+<p class="muted">This page simulates a real Webflow site with the FlowMember embed dropped in.</p>
+
+<div class="box" data-ms-content="visitor">
+  <h3>Sign up</h3>
+  <form data-ms-form="signup">
+    <input type="email" name="email" placeholder="Email" required>
+    <input type="password" name="password" placeholder="Password" required>
+    <button type="submit">Create account</button>
+  </form>
+  <h3>Log in</h3>
+  <form data-ms-form="login">
+    <input type="email" name="email" placeholder="Email" required>
+    <input type="password" name="password" placeholder="Password" required>
+    <button type="submit">Log in</button>
+  </form>
+</div>
+
+<div class="box" data-ms-content="member">
+  <p>Welcome back, <span data-ms-bind="email"></span> (plan: <span data-ms-bind="plan"></span>)</p>
+  <a href="#" data-ms-logout>Log out</a>
+</div>
+
+<div class="box" data-ms-plan="pro">
+  <p>🎉 This box only shows for "pro" plan members.</p>
+</div>
+
+<div class="box">
+  <h3>Protected content</h3>
+  <div data-ms-protected="premium-article" data-ms-fallback="upgrade-msg"></div>
+  <div id="upgrade-msg" style="display:none">Upgrade to "pro" to read this article.</div>
+</div>
+
+<script src="/sdk/flowmember.js" data-site-id="REPLACE_WITH_PUBLIC_KEY" data-api=""></script>
+</body>
+</html>

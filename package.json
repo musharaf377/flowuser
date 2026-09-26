@@ -1,0 +1,15 @@
+{
+  "name": "flowmember",
+  "version": "0.1.0",
+  "description": "Self-hosted membership/user-management system for Webflow sites (Memberstack alternative)",
+  "main": "src/server.js",
+  "type": "commonjs",
+  "scripts": {
+    "dev": "node src/server.js",
+    "start": "node src/server.js"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "license": "MIT"
+}

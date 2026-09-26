@@ -1,0 +1,22 @@
+# Render.com Blueprint — free-tier web service.
+# Push this repo to GitHub, then in Render: New -> Blueprint -> pick the repo.
+#
+# NOTE on the database: Render's free web services have an EPHEMERAL disk —
+# it's wiped on every redeploy/restart. That's fine for testing, but before
+# you rely on this for real members, either:
+#   1) upgrade to a paid instance and attach a persistent Disk (mount it at
+#      /app/data and set DB_PATH=/app/data/flowmember.sqlite), or
+#   2) switch src/db.js to Postgres — see src/db.postgres.js and the README.
+
+services:
+  - type: web
+    name: flowmember
+    env: node
+    plan: free
+    buildCommand: "npm install"
+    startCommand: "node src/server.js"
+    envVars:
+      - key: JWT_SECRET
+        generateValue: true
+      - key: PORT
+        value: 3000

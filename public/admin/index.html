@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FlowMember Admin</title>
+<style>
+  :root { --border:#e2e2e2; --muted:#666; --accent:#2d6cdf; }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, Segoe UI, Roboto, sans-serif; max-width: 880px; margin: 40px auto; padding: 0 20px; color: #1b1b1b; }
+  h1 { font-size: 20px; }
+  h2 { font-size: 16px; margin-top: 32px; }
+  input, select, textarea, button { font: inherit; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; }
+  input, select, textarea { width: 100%; margin-bottom: 8px; }
+  button { background: var(--accent); color: #fff; border: none; cursor: pointer; }
+  button.secondary { background: #fff; color: var(--accent); border: 1px solid var(--accent); }
+  button:disabled { opacity: 0.5; cursor: default; }
+  table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 14px; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); }
+  .card { border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+  .muted { color: var(--muted); font-size: 13px; }
+  .row { display: flex; gap: 8px; align-items: center; }
+  .error { color: #c0392b; font-size: 13px; }
+  code { background: #f3f3f3; padding: 2px 5px; border-radius: 4px; font-size: 12px; }
+  pre { background: #f3f3f3; padding: 12px; border-radius: 6px; overflow-x: auto; font-size: 12px; }
+  select, .site-picker { max-width: 320px; }
+  #app-view { display: none; }
+</style>
+</head>
+<body>
+
+<h1>FlowMember — Admin</h1>
+
+<div id="auth-view">
+  <div class="card">
+    <h2 style="margin-top:0">Log in</h2>
+    <input id="login-email" type="email" placeholder="Email">
+    <input id="login-password" type="password" placeholder="Password">
+    <div class="row">
+      <button id="login-btn">Log in</button>
+      <span class="muted">No account yet?</span>
+    </div>
+    <div id="login-error" class="error"></div>
+  </div>
+  <div class="card">
+    <h2 style="margin-top:0">Sign up</h2>
+    <input id="signup-email" type="email" placeholder="Email">
+    <input id="signup-password" type="password" placeholder="Password (min 8 chars)">
+    <button id="signup-btn">Create account</button>
+    <div id="signup-error" class="error"></div>
+  </div>
+</div>
+
+<div id="app-view">
+  <div class="row" style="justify-content: space-between;">
+    <span class="muted" id="whoami"></span>
+    <button class="secondary" id="logout-btn">Log out</button>
+  </div>
+
+  <h2>Your sites</h2>
+  <div class="card">
+    <div class="row">
+      <input id="new-site-name" placeholder="Site name (e.g. My Webflow Site)">
+      <button id="create-site-btn">Create site</button>
+    </div>
+    <table id="sites-table">
+      <thead><tr><th>Name</th><th>Public key</th><th></th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div id="site-detail" style="display:none">
+    <h2>Embed code for <span id="site-detail-name"></span></h2>
+    <div class="card">
+      <p class="muted">Paste this into your Webflow site's custom code (Site Settings → Custom Code → Footer Code, or a specific page's settings):</p>
+      <pre id="embed-snippet"></pre>
+    </div>
+
+    <h2>Members</h2>
+    <div class="card">
+      <table id="members-table">
+        <thead><tr><th>Email</th><th>Plan</th><th>Joined</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <p class="muted" id="members-empty">No members yet.</p>
+    </div>
+
+    <h2>Protected content blocks</h2>
+    <div class="card">
+      <p class="muted">Define a piece of content and which plan can see it. Fetch it on your Webflow page with
+        <code>&lt;div data-ms-protected="your-key"&gt;&lt;/div&gt;</code>.</p>
+      <input id="block-key" placeholder="Key (e.g. premium-article)">
+      <select id="block-plan">
+        <option value="free">free (everyone, incl. visitors with an account)</option>
+        <option value="pro">pro</option>
+        <option value="any">any paid plan</option>
+      </select>
+      <textarea id="block-body" rows="4" placeholder="HTML content to serve when allowed"></textarea>
+      <button id="save-block-btn">Save content block</button>
+      <table id="blocks-table" style="margin-top:12px">
+        <thead><tr><th>Key</th><th>Plan required</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = ''; // same origin as this admin page
+let token = localStorage.getItem('fm_admin_token') || null;
+let currentOwner = null;
+let sites = [];
+let activeSiteId = null;
+
+function authHeaders() {
+  return token ? { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' };
+}
+
+async function req(path, options = {}) {
+  const res = await fetch(API + path, { ...options, headers: { ...authHeaders(), ...(options.headers || {}) } });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Request failed');
+  return data;
+}
+
+function show(view) {
+  document.getElementById('auth-view').style.display = view === 'auth' ? 'block' : 'none';
+  document.getElementById('app-view').style.display = view === 'app' ? 'block' : 'none';
+}
+
+document.getElementById('login-btn').onclick = async () => {
+  const email = document.getElementById('login-email').value;
+  const password = document.getElementById('login-password').value;
+  document.getElementById('login-error').textContent = '';
+  try {
+    const data = await req('/api/owner/login', { method: 'POST', body: JSON.stringify({ email, password }) });
+    token = data.token;
+    localStorage.setItem('fm_admin_token', token);
+    currentOwner = data.owner;
+    boot();
+  } catch (e) {
+    document.getElementById('login-error').textContent = e.message;
+  }
+};
+
+document.getElementById('signup-btn').onclick = async () => {
+  const email = document.getElementById('signup-email').value;
+  const password = document.getElementById('signup-password').value;
+  document.getElementById('signup-error').textContent = '';
+  try {
+    const data = await req('/api/owner/signup', { method: 'POST', body: JSON.stringify({ email, password }) });
+    token = data.token;
+    localStorage.setItem('fm_admin_token', token);
+    currentOwner = data.owner;
+    boot();
+  } catch (e) {
+    document.getElementById('signup-error').textContent = e.message;
+  }
+};
+
+document.getElementById('logout-btn').onclick = () => {
+  token = null;
+  localStorage.removeItem('fm_admin_token');
+  show('auth');
+};
+
+document.getElementById('create-site-btn').onclick = async () => {
+  const name = document.getElementById('new-site-name').value.trim();
+  if (!name) return;
+  await req('/api/sites', { method: 'POST', body: JSON.stringify({ name }) });
+  document.getElementById('new-site-name').value = '';
+  await loadSites();
+};
+
+async function loadSites() {
+  const data = await req('/api/sites');
+  sites = data.sites;
+  const tbody = document.querySelector('#sites-table tbody');
+  tbody.innerHTML = '';
+  sites.forEach((s) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${s.name}</td><td><code>${s.publicKey}</code></td><td><button data-id="${s.id}" class="manage-btn secondary">Manage</button></td>`;
+    tbody.appendChild(tr);
+  });
+  document.querySelectorAll('.manage-btn').forEach((btn) => {
+    btn.onclick = () => openSite(btn.getAttribute('data-id'));
+  });
+}
+
+async function openSite(id) {
+  activeSiteId = id;
+  const site = sites.find((s) => s.id === id);
+  document.getElementById('site-detail').style.display = '';
+  document.getElementById('site-detail-name').textContent = site.name;
+
+  const origin = window.location.origin;
+  document.getElementById('embed-snippet').textContent =
+`<script src="${origin}/sdk/flowmember.js"
+        data-site-id="${site.publicKey}"
+        data-api="${origin}"><\/script>`;
+
+  await loadMembers(id);
+  await loadBlocks(id);
+}
+
+async function loadMembers(siteId) {
+  const data = await req(`/api/sites/${siteId}/members`);
+  const tbody = document.querySelector('#members-table tbody');
+  tbody.innerHTML = '';
+  document.getElementById('members-empty').style.display = data.members.length ? 'none' : '';
+  data.members.forEach((m) => {
+    const tr = document.createElement('tr');
+    const date = new Date(m.createdAt).toLocaleDateString();
+    tr.innerHTML = `<td>${m.email}</td><td>
+        <select data-id="${m.id}" class="plan-select">
+          <option value="free" ${m.plan === 'free' ? 'selected' : ''}>free</option>
+          <option value="pro" ${m.plan === 'pro' ? 'selected' : ''}>pro</option>
+        </select>
+      </td><td>${date}</td><td></td>`;
+    tbody.appendChild(tr);
+  });
+  document.querySelectorAll('.plan-select').forEach((sel) => {
+    sel.onchange = async () => {
+      await req(`/api/sites/${activeSiteId}/members/${sel.getAttribute('data-id')}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ plan: sel.value }),
+      });
+    };
+  });
+}
+
+async function loadBlocks(siteId) {
+  const data = await req(`/api/sites/${siteId}/content`);
+  const tbody = document.querySelector('#blocks-table tbody');
+  tbody.innerHTML = '';
+  data.blocks.forEach((b) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${b.key}</td><td>${b.planRequired}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+document.getElementById('save-block-btn').onclick = async () => {
+  const key = document.getElementById('block-key').value.trim();
+  const planRequired = document.getElementById('block-plan').value;
+  const body = document.getElementById('block-body').value;
+  if (!key || !activeSiteId) return;
+  await req(`/api/sites/${activeSiteId}/content`, {
+    method: 'POST',
+    body: JSON.stringify({ key, planRequired, body }),
+  });
+  document.getElementById('block-key').value = '';
+  document.getElementById('block-body').value = '';
+  await loadBlocks(activeSiteId);
+};
+
+async function boot() {
+  if (!token) return show('auth');
+  try {
+    await loadSites();
+    show('app');
+    document.getElementById('whoami').textContent = currentOwner ? currentOwner.email : '';
+  } catch (e) {
+    token = null;
+    localStorage.removeItem('fm_admin_token');
+    show('auth');
+  }
+}
+
+boot();
+</script>
+</body>
+</html>
