@@ -349,6 +349,168 @@
     .welcome-card button {
       width: 100%;
     }
+
+    /* per-site dashboard shell */
+    .site-shell {
+      display: flex;
+      align-items: flex-start;
+      gap: 24px;
+    }
+
+    .site-sidebar {
+      width: 200px;
+      flex-shrink: 0;
+    }
+
+    .site-sidebar-title {
+      font-weight: 700;
+      font-size: 15px;
+      padding: 0 12px;
+      margin-bottom: 12px;
+      overflow-wrap: anywhere;
+    }
+
+    .site-nav {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .site-nav-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      background: none;
+      border: none;
+      text-align: left;
+      padding: 9px 12px;
+      border-radius: 6px;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .site-nav-item:hover:not(.active) {
+      background: var(--bg-soft);
+      color: var(--ink);
+    }
+
+    .site-nav-item.active {
+      background: var(--ok-bg);
+      color: var(--accent);
+    }
+
+    .nav-count {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    .site-nav-item.active .nav-count {
+      color: var(--accent);
+    }
+
+    .site-main {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .site-panel {
+      display: none;
+    }
+
+    .site-panel.active {
+      display: block;
+    }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .stat-card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .stat-value {
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .chart-bars {
+      display: flex;
+      align-items: flex-end;
+      gap: 4px;
+      height: 100px;
+    }
+
+    .chart-bar {
+      flex: 1;
+      background: var(--ok-bg);
+      border-radius: 3px 3px 0 0;
+      min-height: 2px;
+    }
+
+    .chart-bar.has-signups {
+      background: var(--accent);
+    }
+
+    .chart-labels {
+      display: flex;
+      gap: 4px;
+      margin-top: 6px;
+    }
+
+    .chart-labels span {
+      flex: 1;
+      text-align: center;
+      font-size: 10px;
+      color: var(--muted);
+    }
+
+    .signup-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+
+    .signup-item:last-child {
+      border-bottom: none;
+    }
+
+    @media (max-width: 700px) {
+      .site-shell {
+        flex-direction: column;
+      }
+
+      .site-sidebar {
+        width: 100%;
+      }
+
+      .site-sidebar-title {
+        display: none;
+      }
+
+      .site-nav {
+        flex-direction: row;
+        overflow-x: auto;
+      }
+    }
   </style>
 </head>
 
@@ -433,64 +595,126 @@
         <button class="ghost" id="site-detail-back-btn" style="padding-left:0; margin-bottom:8px">← Back to
           sites</button>
 
-        <div class="card">
-          <h2>Embed code for <span id="site-detail-name"></span></h2>
-          <p class="muted">Paste this into your Webflow site's custom code (Site Settings → Custom Code → Footer Code,
-            or a specific page's settings):</p>
-          <pre id="embed-snippet"></pre>
-          <button class="secondary" id="copy-embed-btn" style="margin-top:10px">Copy embed code</button>
-        </div>
+        <div class="site-shell">
+          <aside class="site-sidebar">
+            <div class="site-sidebar-title" id="site-detail-name"></div>
+            <nav class="site-nav">
+              <button class="site-nav-item active" data-panel="overview" type="button">Overview</button>
+              <button class="site-nav-item" data-panel="members" type="button">Members <span class="nav-count"
+                  id="nav-members-count"></span></button>
+              <button class="site-nav-item" data-panel="content" type="button">Gated Content <span class="nav-count"
+                  id="nav-content-count"></span></button>
+              <button class="site-nav-item" data-panel="embed" type="button">Embed &amp; Setup</button>
+            </nav>
+          </aside>
 
-        <div class="card">
-          <h2>Member dashboard link</h2>
-          <p class="muted">Link to this from your Webflow site (e.g. a "My Account" nav item) so members can view their
-            plan and access — a self-service page you don't have to build.</p>
-          <pre id="member-link"></pre>
-          <button class="secondary" id="copy-member-link-btn" style="margin-top:10px">Copy link</button>
-        </div>
+          <div class="site-main">
 
-        <div class="card">
-          <h2>Members <span class="muted" id="members-count"></span></h2>
-          <table id="members-table">
-            <thead>
-              <tr>
-                <th>Email</th>
-                <th>Plan</th>
-                <th>Joined</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-          <p class="empty-state" id="members-empty">No members yet — share your Webflow site's signup form to get
-            started.</p>
-        </div>
+            <div class="site-panel active" id="panel-overview">
+              <div class="stat-grid">
+                <div class="stat-card">
+                  <div class="stat-label">Total members</div>
+                  <div class="stat-value" id="stat-total-members">0</div>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-label">Signups (30 days)</div>
+                  <div class="stat-value" id="stat-signups-30d">0</div>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-label">Free members</div>
+                  <div class="stat-value" id="stat-free-members">0</div>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-label">Pro members</div>
+                  <div class="stat-value" id="stat-pro-members">0</div>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-label">Content blocks</div>
+                  <div class="stat-value" id="stat-content-blocks">0</div>
+                </div>
+              </div>
 
-        <div class="card">
-          <h2>Protected content blocks</h2>
-          <p class="muted">Define a piece of content and which plan can see it. Fetch it on your Webflow page with
-            <code>&lt;div data-ms-protected="your-key"&gt;&lt;/div&gt;</code>.
-          </p>
-          <label for="block-key">Key</label>
-          <input id="block-key" placeholder="e.g. premium-article">
-          <label for="block-plan">Plan required</label>
-          <select id="block-plan">
-            <option value="free">free (everyone, incl. visitors with an account)</option>
-            <option value="pro">pro</option>
-            <option value="any">any paid plan</option>
-          </select>
-          <label for="block-body">Content</label>
-          <textarea id="block-body" rows="4" placeholder="HTML content to serve when allowed"></textarea>
-          <button id="save-block-btn">Save content block</button>
-          <table id="blocks-table" style="margin-top:14px">
-            <thead>
-              <tr>
-                <th>Key</th>
-                <th>Plan required</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
+              <div class="card">
+                <h2>Signups — last 14 days</h2>
+                <div class="chart-bars" id="signup-chart"></div>
+                <div class="chart-labels" id="signup-chart-labels"></div>
+              </div>
+
+              <div class="card">
+                <h2>Recent signups</h2>
+                <div id="recent-signups-list"></div>
+                <p class="empty-state" id="recent-signups-empty" style="display:none">No signups yet — share your
+                  Webflow site's signup form to get started.</p>
+              </div>
+            </div>
+
+            <div class="site-panel" id="panel-members">
+              <div class="card">
+                <h2>Members <span class="muted" id="members-count"></span></h2>
+                <table id="members-table">
+                  <thead>
+                    <tr>
+                      <th>Email</th>
+                      <th>Plan</th>
+                      <th>Joined</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+                <p class="empty-state" id="members-empty">No members yet — share your Webflow site's signup form to
+                  get started.</p>
+              </div>
+            </div>
+
+            <div class="site-panel" id="panel-content">
+              <div class="card">
+                <h2>Protected content blocks</h2>
+                <p class="muted">Define a piece of content and which plan can see it. Fetch it on your Webflow page
+                  with <code>&lt;div data-ms-protected="your-key"&gt;&lt;/div&gt;</code>.
+                </p>
+                <label for="block-key">Key</label>
+                <input id="block-key" placeholder="e.g. premium-article">
+                <label for="block-plan">Plan required</label>
+                <select id="block-plan">
+                  <option value="free">free (everyone, incl. visitors with an account)</option>
+                  <option value="pro">pro</option>
+                  <option value="any">any paid plan</option>
+                </select>
+                <label for="block-body">Content</label>
+                <textarea id="block-body" rows="4" placeholder="HTML content to serve when allowed"></textarea>
+                <button id="save-block-btn">Save content block</button>
+                <table id="blocks-table" style="margin-top:14px">
+                  <thead>
+                    <tr>
+                      <th>Key</th>
+                      <th>Plan required</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="site-panel" id="panel-embed">
+              <div class="card">
+                <h2>Embed code for <span id="site-detail-embed-name"></span></h2>
+                <p class="muted">Paste this into your Webflow site's custom code (Site Settings → Custom Code →
+                  Footer Code, or a specific page's settings):</p>
+                <pre id="embed-snippet"></pre>
+                <button class="secondary" id="copy-embed-btn" style="margin-top:10px">Copy embed code</button>
+              </div>
+
+              <div class="card">
+                <h2>Member dashboard link</h2>
+                <p class="muted">Link to this from your Webflow site (e.g. a "My Account" nav item) so members can
+                  view their plan and access — a self-service page you don't have to build.</p>
+                <pre id="member-link"></pre>
+                <button class="secondary" id="copy-member-link-btn" style="margin-top:10px">Copy link</button>
+              </div>
+            </div>
+
+          </div>
         </div>
       </div>
     </div>
@@ -695,12 +919,26 @@
       activeSiteId = null;
     };
 
+    function selectSitePanel(panel) {
+      document.querySelectorAll('.site-nav-item').forEach((btn) => {
+        btn.classList.toggle('active', btn.getAttribute('data-panel') === panel);
+      });
+      document.querySelectorAll('.site-panel').forEach((el) => {
+        el.classList.toggle('active', el.id === `panel-${panel}`);
+      });
+    }
+    document.querySelectorAll('.site-nav-item').forEach((btn) => {
+      btn.onclick = () => selectSitePanel(btn.getAttribute('data-panel'));
+    });
+
     async function openSite(id) {
       activeSiteId = id;
       const site = sites.find((s) => s.id === id);
       const detail = document.getElementById('site-detail');
       detail.style.display = '';
       document.getElementById('site-detail-name').textContent = site.name;
+      document.getElementById('site-detail-embed-name').textContent = site.name;
+      selectSitePanel('overview');
 
       const origin = window.location.origin;
       document.getElementById('embed-snippet').textContent =
@@ -709,9 +947,54 @@
         data-api="${origin}"><\/script>`;
       document.getElementById('member-link').textContent = `${origin}/member?site=${site.publicKey}`;
 
-      await loadMembers(id);
-      await loadBlocks(id);
+      await Promise.all([loadStats(id), loadMembers(id), loadBlocks(id)]);
       detail.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function relativeDate(ts) {
+      const days = Math.floor((Date.now() - ts) / (24 * 60 * 60 * 1000));
+      if (days <= 0) return 'Today';
+      if (days === 1) return 'Yesterday';
+      if (days < 30) return `${days} days ago`;
+      return new Date(ts).toLocaleDateString();
+    }
+
+    async function loadStats(siteId) {
+      const data = await req(`/api/sites/${siteId}/stats`);
+
+      document.getElementById('stat-total-members').textContent = data.totalMembers;
+      document.getElementById('stat-signups-30d').textContent = data.signups30d;
+      document.getElementById('stat-free-members').textContent = data.planBreakdown.free || 0;
+      document.getElementById('stat-pro-members').textContent = data.planBreakdown.pro || 0;
+      document.getElementById('stat-content-blocks').textContent = data.contentBlockCount;
+
+      const maxCount = Math.max(1, ...data.dailySignups.map((d) => d.count));
+      const chart = document.getElementById('signup-chart');
+      const labels = document.getElementById('signup-chart-labels');
+      chart.innerHTML = '';
+      labels.innerHTML = '';
+      data.dailySignups.forEach((d) => {
+        const bar = document.createElement('div');
+        bar.className = 'chart-bar' + (d.count > 0 ? ' has-signups' : '');
+        bar.style.height = `${Math.max(4, (d.count / maxCount) * 100)}%`;
+        bar.title = `${d.date}: ${d.count} signup${d.count === 1 ? '' : 's'}`;
+        chart.appendChild(bar);
+
+        const label = document.createElement('span');
+        const day = new Date(d.date + 'T00:00:00Z');
+        label.textContent = day.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+        labels.appendChild(label);
+      });
+
+      const list = document.getElementById('recent-signups-list');
+      list.innerHTML = '';
+      document.getElementById('recent-signups-empty').style.display = data.recentSignups.length ? 'none' : '';
+      data.recentSignups.forEach((m) => {
+        const row = document.createElement('div');
+        row.className = 'signup-item';
+        row.innerHTML = `<span>${m.email}</span><span class="muted">${m.plan} · ${relativeDate(m.createdAt)}</span>`;
+        list.appendChild(row);
+      });
     }
 
     document.getElementById('copy-embed-btn').onclick = async () => {
@@ -744,6 +1027,7 @@
       tbody.innerHTML = '';
       document.getElementById('members-empty').style.display = data.members.length ? 'none' : '';
       document.getElementById('members-count').textContent = data.members.length ? `(${data.members.length})` : '';
+      document.getElementById('nav-members-count').textContent = data.members.length || '';
       data.members.forEach((m) => {
         const tr = document.createElement('tr');
         const date = new Date(m.createdAt).toLocaleDateString();
@@ -761,6 +1045,7 @@
             method: 'PATCH',
             body: JSON.stringify({ plan: sel.value }),
           });
+          await loadStats(activeSiteId);
         };
       });
     }
@@ -769,6 +1054,7 @@
       const data = await req(`/api/sites/${siteId}/content`);
       const tbody = document.querySelector('#blocks-table tbody');
       tbody.innerHTML = '';
+      document.getElementById('nav-content-count').textContent = data.blocks.length || '';
       data.blocks.forEach((b) => {
         const tr = document.createElement('tr');
         tr.innerHTML = `<td>${b.key}</td><td>${b.planRequired}</td>`;
@@ -790,6 +1076,7 @@
         document.getElementById('block-key').value = '';
         document.getElementById('block-body').value = '';
         await loadBlocks(activeSiteId);
+        await loadStats(activeSiteId);
       });
     };
 

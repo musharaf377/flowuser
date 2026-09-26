@@ -78,6 +78,52 @@ router.patch('/api/sites/:id/members/:memberId', requireOwnerAuth, async (req, r
   res.end(JSON.stringify({ ok: true }));
 });
 
+// Overview stats for the per-site dashboard. Computed in JS from a single
+// query rather than backend-specific SQL date functions, so this works
+// identically against both the SQLite and Postgres storage backends.
+router.get('/api/sites/:id/stats', requireOwnerAuth, async (req, res) => {
+  const site = await loadOwnedSite(req);
+  const [members, contentBlockCount] = await Promise.all([
+    db.all('SELECT email, plan, created_at as createdAt FROM members WHERE site_id = ? ORDER BY created_at DESC', [
+      site.id,
+    ]),
+    db.get('SELECT COUNT(*) as count FROM content_blocks WHERE site_id = ?', [site.id]),
+  ]);
+
+  const planBreakdown = {};
+  for (const m of members) {
+    planBreakdown[m.plan] = (planBreakdown[m.plan] || 0) + 1;
+  }
+
+  const DAY_MS = 24 * 60 * 60 * 1000;
+  const cutoff30d = Date.now() - 30 * DAY_MS;
+  const signups30d = members.filter((m) => m.createdAt >= cutoff30d).length;
+
+  // last 14 calendar days (UTC), oldest first, zero-filled
+  const dayKey = (ts) => new Date(ts).toISOString().slice(0, 10);
+  const dailyCounts = {};
+  for (let i = 13; i >= 0; i--) {
+    dailyCounts[dayKey(Date.now() - i * DAY_MS)] = 0;
+  }
+  for (const m of members) {
+    const key = dayKey(m.createdAt);
+    if (key in dailyCounts) dailyCounts[key]++;
+  }
+  const dailySignups = Object.entries(dailyCounts).map(([date, count]) => ({ date, count }));
+
+  res.writeHead(200, { 'Content-Type': 'application/json' });
+  res.end(
+    JSON.stringify({
+      totalMembers: members.length,
+      signups30d,
+      planBreakdown,
+      contentBlockCount: contentBlockCount.count,
+      dailySignups,
+      recentSignups: members.slice(0, 8),
+    })
+  );
+});
+
 router.get('/api/sites/:id/content', requireOwnerAuth, async (req, res) => {
   const site = await loadOwnedSite(req);
   const blocks = await db.all(
