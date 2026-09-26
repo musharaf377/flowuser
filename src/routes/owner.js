@@ -2,6 +2,7 @@ const { Router, httpError } = require('../router');
 const db = require('../db');
 const auth = require('../auth');
 const { JWT_SECRET } = require('../middleware');
+const { DEFAULT_PLAN } = require('../plans');
 
 const router = new Router();
 
@@ -25,7 +26,7 @@ router.post('/api/owner/signup', async (req, res) => {
 
   const token = auth.sign({ sub: id, email: email.toLowerCase(), type: 'owner' }, JWT_SECRET);
   res.writeHead(201, { 'Content-Type': 'application/json' });
-  res.end(JSON.stringify({ token, owner: { id, email: email.toLowerCase() } }));
+  res.end(JSON.stringify({ token, owner: { id, email: email.toLowerCase(), plan: DEFAULT_PLAN } }));
 });
 
 router.post('/api/owner/login', async (req, res) => {
@@ -39,7 +40,7 @@ router.post('/api/owner/login', async (req, res) => {
 
   const token = auth.sign({ sub: owner.id, email: owner.email, type: 'owner' }, JWT_SECRET);
   res.writeHead(200, { 'Content-Type': 'application/json' });
-  res.end(JSON.stringify({ token, owner: { id: owner.id, email: owner.email } }));
+  res.end(JSON.stringify({ token, owner: { id: owner.id, email: owner.email, plan: owner.plan } }));
 });
 
 module.exports = router;

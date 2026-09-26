@@ -24,6 +24,7 @@ db.exec(`
     id TEXT PRIMARY KEY,
     email TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
+    plan TEXT NOT NULL DEFAULT 'free',
     created_at INTEGER NOT NULL
   );
 
@@ -59,6 +60,12 @@ db.exec(`
     FOREIGN KEY (site_id) REFERENCES sites(id)
   );
 `);
+
+// migrate: databases created before the owners.plan column existed
+const ownerColumns = db.prepare("PRAGMA table_info(owners)").all();
+if (!ownerColumns.some((c) => c.name === 'plan')) {
+  db.exec("ALTER TABLE owners ADD COLUMN plan TEXT NOT NULL DEFAULT 'free'");
+}
 
 function run(sql, params = []) {
   const stmt = db.prepare(sql);

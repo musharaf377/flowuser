@@ -32,8 +32,10 @@ const SCHEMA = `
     id TEXT PRIMARY KEY,
     email TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
+    plan TEXT NOT NULL DEFAULT 'free',
     created_at BIGINT NOT NULL
   );
+  ALTER TABLE owners ADD COLUMN IF NOT EXISTS plan TEXT NOT NULL DEFAULT 'free';
 
   CREATE TABLE IF NOT EXISTS sites (
     id TEXT PRIMARY KEY,
