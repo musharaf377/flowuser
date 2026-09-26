@@ -1,0 +1,579 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Docs — FlowMember</title>
+<meta name="description" content="Every data attribute the FlowMember SDK supports, what it does, and how to use it in Webflow.">
+<style>
+  :root {
+    --border: #e2e2e2;
+    --muted: #666;
+    --accent: #2d6cdf;
+    --accent-dark: #1f52ac;
+    --bg-soft: #f7f9fc;
+    --ink: #1b1b1b;
+    --code-bg: #f5f6f8;
+    --code-border: #e3e5ea;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    margin: 0;
+    color: var(--ink);
+    background: #fff;
+    line-height: 1.6;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  header.topbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: #fff;
+    border-bottom: 1px solid var(--border);
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .logo { font-weight: 700; font-size: 17px; color: var(--ink); }
+  .logo a { color: inherit; }
+  .topbar-links { display: flex; gap: 20px; align-items: center; font-size: 14px; }
+  .topbar-links a.muted-link { color: var(--muted); }
+  .topbar-links a.muted-link:hover { color: var(--ink); }
+
+  .layout {
+    max-width: 1160px;
+    margin: 0 auto;
+    display: flex;
+    align-items: flex-start;
+    gap: 40px;
+    padding: 32px 24px 80px;
+  }
+
+  /* sidebar */
+  .sidebar {
+    width: 240px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 72px;
+    max-height: calc(100vh - 96px);
+    overflow-y: auto;
+  }
+  .sidebar-group { margin-bottom: 22px; }
+  .sidebar-group-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: var(--muted);
+    padding: 0 12px 6px;
+  }
+  .sidebar a.nav-link {
+    display: block;
+    padding: 7px 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    color: var(--muted);
+    font-weight: 500;
+    border-left: 2px solid transparent;
+  }
+  .sidebar a.nav-link:hover {
+    color: var(--ink);
+    background: var(--bg-soft);
+    text-decoration: none;
+  }
+  .sidebar a.nav-link.active {
+    color: var(--accent);
+    background: #eef2fb;
+    border-left-color: var(--accent);
+    font-weight: 600;
+  }
+
+  .menu-toggle { display: none; }
+
+  /* main content */
+  main { flex: 1; min-width: 0; max-width: 760px; }
+
+  .doc-hero { margin-bottom: 48px; }
+  .doc-hero h1 { font-size: 32px; margin: 0 0 10px; letter-spacing: -0.5px; }
+  .doc-hero p { color: var(--muted); font-size: 16px; margin: 0; max-width: 600px; }
+
+  section.doc-section { padding-bottom: 56px; margin-bottom: 8px; border-bottom: 1px solid var(--border); scroll-margin-top: 84px; }
+  section.doc-section:last-of-type { border-bottom: none; }
+
+  h2.section-h { font-size: 22px; margin: 0 0 6px; }
+  p.section-lede { color: var(--muted); font-size: 15px; margin: 0 0 20px; }
+  h3.sub-h { font-size: 16px; margin: 28px 0 8px; }
+
+  p { margin: 0 0 14px; }
+  ul.doc-list, ol.doc-list { margin: 0 0 14px; padding-left: 22px; }
+  ul.doc-list li, ol.doc-list li { margin-bottom: 6px; font-size: 15px; }
+
+  code.inline {
+    background: var(--code-bg);
+    border: 1px solid var(--code-border);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-family: "SFMono-Regular", Consolas, Menlo, monospace;
+  }
+
+  .code-block {
+    background: var(--code-bg);
+    border: 1px solid var(--code-border);
+    border-radius: 8px;
+    margin: 0 0 18px;
+    overflow: hidden;
+  }
+  .code-block-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 7px 12px;
+    border-bottom: 1px solid var(--code-border);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .code-block-head button {
+    font: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: none;
+    letter-spacing: 0;
+    background: none;
+    border: 1px solid var(--code-border);
+    color: var(--muted);
+    padding: 3px 9px;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  .code-block-head button:hover { color: var(--ink); border-color: var(--muted); }
+  .code-block pre {
+    margin: 0;
+    padding: 14px 16px;
+    overflow-x: auto;
+    font-size: 13px;
+    line-height: 1.55;
+    font-family: "SFMono-Regular", Consolas, Menlo, monospace;
+  }
+
+  .callout {
+    border: 1px solid var(--code-border);
+    border-left: 3px solid var(--accent);
+    background: var(--bg-soft);
+    border-radius: 0 8px 8px 0;
+    padding: 12px 16px;
+    font-size: 14px;
+    margin: 0 0 18px;
+  }
+  .callout.warn { border-left-color: #c0392b; }
+  .callout strong { display: block; margin-bottom: 2px; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+
+  table.ref-table { width: 100%; border-collapse: collapse; font-size: 13.5px; margin: 0 0 18px; }
+  table.ref-table th {
+    text-align: left;
+    padding: 8px 10px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  table.ref-table td { padding: 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  table.ref-table tr:last-child td { border-bottom: none; }
+  table.ref-table code.inline { white-space: nowrap; }
+
+  footer.doc-footer {
+    max-width: 760px;
+    margin-left: 280px;
+    padding: 0 24px 60px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  @media (max-width: 980px) {
+    .layout { flex-direction: column; gap: 0; }
+    .sidebar {
+      position: static;
+      width: 100%;
+      max-height: none;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 12px;
+      margin-bottom: 24px;
+    }
+    .menu-toggle {
+      display: block;
+      width: 100%;
+      text-align: left;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--ink);
+      margin-bottom: 10px;
+    }
+    .sidebar-body { display: none; }
+    .sidebar.open .sidebar-body { display: block; }
+    main { max-width: 100%; }
+    footer.doc-footer { margin-left: 0; max-width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <span class="logo"><a href="/">FlowMember</a></span>
+  <nav class="topbar-links">
+    <a class="muted-link" href="/#pricing">Pricing</a>
+    <a class="muted-link" href="/admin">Dashboard</a>
+    <a href="/admin">Get started free</a>
+  </nav>
+</header>
+
+<div class="layout">
+
+  <aside class="sidebar" id="sidebar">
+    <button class="menu-toggle" id="menu-toggle" type="button">☰ On this page</button>
+    <div class="sidebar-body" id="sidebar-body">
+      <div class="sidebar-group">
+        <div class="sidebar-group-title">Setup</div>
+        <a class="nav-link" href="#getting-started">Getting started</a>
+      </div>
+      <div class="sidebar-group">
+        <div class="sidebar-group-title">Auth</div>
+        <a class="nav-link" href="#forms">Signup &amp; login forms</a>
+        <a class="nav-link" href="#logout">Logging out</a>
+      </div>
+      <div class="sidebar-group">
+        <div class="sidebar-group-title">Show &amp; hide content</div>
+        <a class="nav-link" href="#content-visibility">By auth state</a>
+        <a class="nav-link" href="#plan-visibility">By plan</a>
+        <a class="nav-link" href="#data-binding">Data binding</a>
+        <a class="nav-link" href="#gated-content">Gated content</a>
+      </div>
+      <div class="sidebar-group">
+        <div class="sidebar-group-title">Advanced</div>
+        <a class="nav-link" href="#js-api">JavaScript API</a>
+        <a class="nav-link" href="#member-dashboard">Member dashboard</a>
+        <a class="nav-link" href="#full-example">Full example</a>
+        <a class="nav-link" href="#reference">Attribute reference</a>
+      </div>
+    </div>
+  </aside>
+
+  <main>
+
+    <div class="doc-hero">
+      <h1>Documentation</h1>
+      <p>FlowMember works entirely through <code class="inline">data-ms-*</code> attributes in Webflow's Designer — no custom code required for the common cases. This page covers every attribute the SDK supports, what it does, and how to use it.</p>
+    </div>
+
+    <section class="doc-section" id="getting-started">
+      <h2 class="section-h">Getting started</h2>
+      <p class="section-lede">One script tag on your Webflow site, then everything else is attributes.</p>
+
+      <p>In your Webflow project: <strong>Site Settings → Custom Code → Footer Code</strong> (site-wide), or a single page's <strong>Page Settings → Before &lt;/body&gt; tag</strong>. Paste your embed snippet — copy the exact one from your site's <a href="/admin">dashboard</a>, it already has your site's key filled in:</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>HTML</span><button class="copy-btn" type="button">Copy</button></div>
+        <pre><code>&lt;script src="https://YOUR-SERVER/sdk/flowmember.js"
+        data-site-id="YOUR_PUBLIC_KEY"
+        data-api="https://YOUR-SERVER"&gt;&lt;/script&gt;</code></pre>
+      </div>
+
+      <table class="ref-table">
+        <thead><tr><th>Attribute</th><th>On</th><th>Required</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code class="inline">data-site-id</code></td><td>the <code class="inline">&lt;script&gt;</code> tag</td><td>Yes</td><td>Your site's public key, from the dashboard's embed code. Scopes every request to your site — visitors on other FlowMember sites never mix with yours.</td></tr>
+          <tr><td><code class="inline">data-api</code></td><td>the <code class="inline">&lt;script&gt;</code> tag</td><td>No</td><td>The FlowMember server URL. If omitted, it defaults to wherever the script itself was loaded from — safe to leave out if you're pasting the snippet exactly as copied.</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout">
+        <strong>Note</strong>
+        Once the script tag is in place, every attribute below just works anywhere on the page — no extra setup per element.
+      </div>
+    </section>
+
+    <section class="doc-section" id="forms">
+      <h2 class="section-h">Signup &amp; login forms</h2>
+      <p class="section-lede">Mark a Webflow form as a signup or login form and FlowMember wires up the submit handler for you.</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>HTML</span><button class="copy-btn" type="button">Copy</button></div>
+        <pre><code>&lt;form data-ms-form="signup"&gt;
+  &lt;input type="email" name="email" required&gt;
+  &lt;input type="password" name="password" required&gt;
+  &lt;button type="submit"&gt;Sign up&lt;/button&gt;
+&lt;/form&gt;
+
+&lt;form data-ms-form="login"&gt;
+  &lt;input type="email" name="email" required&gt;
+  &lt;input type="password" name="password" required&gt;
+  &lt;button type="submit"&gt;Log in&lt;/button&gt;
+&lt;/form&gt;</code></pre>
+      </div>
+
+      <p>The SDK looks for an input named <code class="inline">email</code> and one named <code class="inline">password</code> inside the form. If Webflow left both inputs with the same <code class="inline">name</code> (a common Designer slip), it falls back to matching by <code class="inline">type="email"</code> / <code class="inline">type="password"</code> — so it's forgiving of minor markup mistakes, but the two fields must still resolve to different elements.</p>
+
+      <h3 class="sub-h">Attribute reference</h3>
+      <table class="ref-table">
+        <thead><tr><th>Attribute</th><th>On</th><th>Value</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code class="inline">data-ms-form</code></td><td>a <code class="inline">&lt;form&gt;</code>, or a wrapper <code class="inline">&lt;div&gt;</code> around one</td><td><code class="inline">signup</code> or <code class="inline">login</code></td><td>Marks the form as an auth form. Works on a Webflow Form Block's wrapper div too — the SDK looks inside for the real <code class="inline">&lt;form&gt;</code> automatically.</td></tr>
+          <tr><td><code class="inline">data-ms-redirect</code></td><td>the same <code class="inline">&lt;form&gt;</code></td><td>a URL or path</td><td>Where to send the visitor after a successful signup/login. Omit it and the page just reloads in place.</td></tr>
+          <tr><td><code class="inline">data-ms-error</code></td><td>any element inside the form (optional)</td><td>—</td><td>Where error text (e.g. "Invalid email or password") is written. If you don't add one, FlowMember creates a small red text element inside the form automatically.</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout warn">
+        <strong>Webflow tip</strong>
+        FlowMember intercepts the submit before Webflow's own handler runs, so Webflow's built-in "Thank you" message and form storage are skipped for these forms — that's expected, the member record is stored in FlowMember instead.
+      </div>
+    </section>
+
+    <section class="doc-section" id="logout">
+      <h2 class="section-h">Logging out</h2>
+      <p class="section-lede">Turn any link or button into a logout action.</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>HTML</span><button class="copy-btn" type="button">Copy</button></div>
+        <pre><code>&lt;a href="#" data-ms-logout&gt;Log out&lt;/a&gt;</code></pre>
+      </div>
+
+      <table class="ref-table">
+        <thead><tr><th>Attribute</th><th>On</th><th>Value</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code class="inline">data-ms-logout</code></td><td>any clickable element</td><td>— (presence only)</td><td>Clears the visitor's session and redirects. Clicking prevents the link's default behavior, so <code class="inline">href="#"</code> is fine.</td></tr>
+          <tr><td><code class="inline">data-ms-redirect</code></td><td>the same element</td><td>a URL or path</td><td>Where to send the visitor after logging out. Omit it and they stay on the current page (refreshed to its logged-out state).</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="doc-section" id="content-visibility">
+      <h2 class="section-h">Show &amp; hide by auth state</h2>
+      <p class="section-lede">Reveal or hide elements based on whether the visitor is logged in — for banners, nav items, or "members only" sections.</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>HTML</span><button class="copy-btn" type="button">Copy</button></div>
+        <pre><code>&lt;div data-ms-content="member"&gt;Welcome back!&lt;/div&gt;
+&lt;div data-ms-content="visitor"&gt;Sign up to get started&lt;/div&gt;</code></pre>
+      </div>
+
+      <table class="ref-table">
+        <thead><tr><th>Attribute</th><th>Value</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code class="inline">data-ms-content</code></td><td><code class="inline">member</code></td><td>Visible only when a member is logged in.</td></tr>
+          <tr><td><code class="inline">data-ms-content</code></td><td><code class="inline">visitor</code></td><td>Visible only when no one is logged in.</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout warn">
+        <strong>Not a security boundary</strong>
+        This only hides elements with CSS — the markup and its contents are still present in the page source. Anyone can inspect the page and see hidden content. For anything that actually needs to stay secret from non-qualifying visitors, use <a href="#gated-content">gated content</a> instead, which fetches the real content from the server only when allowed.
+      </div>
+    </section>
+
+    <section class="doc-section" id="plan-visibility">
+      <h2 class="section-h">Show &amp; hide by plan</h2>
+      <p class="section-lede">Reveal an element only to members on a specific plan.</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>HTML</span><button class="copy-btn" type="button">Copy</button></div>
+        <pre><code>&lt;div data-ms-plan="pro"&gt;This is a Pro-only perk.&lt;/div&gt;</code></pre>
+      </div>
+
+      <table class="ref-table">
+        <thead><tr><th>Attribute</th><th>Value</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code class="inline">data-ms-plan</code></td><td>a plan name, e.g. <code class="inline">free</code> or <code class="inline">pro</code></td><td>Visible only if the logged-in member's plan exactly matches this value. Hidden for visitors and for members on a different plan.</td></tr>
+        </tbody>
+      </table>
+
+      <p>A member's plan is set per-site by the site owner from the <a href="/admin">dashboard</a>'s Members panel. Same CSS-only caveat as above applies — pair with gated content for anything that must stay actually hidden.</p>
+    </section>
+
+    <section class="doc-section" id="data-binding">
+      <h2 class="section-h">Data binding</h2>
+      <p class="section-lede">Print a logged-in member's own info into the page.</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>HTML</span><button class="copy-btn" type="button">Copy</button></div>
+        <pre><code>Logged in as &lt;span data-ms-bind="email"&gt;&lt;/span&gt;
+Your plan: &lt;span data-ms-bind="plan"&gt;&lt;/span&gt;</code></pre>
+      </div>
+
+      <table class="ref-table">
+        <thead><tr><th>Attribute</th><th>Value</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code class="inline">data-ms-bind</code></td><td><code class="inline">email</code>, <code class="inline">plan</code>, or <code class="inline">id</code></td><td>Fills the element's text with that field from the logged-in member. Empty for logged-out visitors.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="doc-section" id="gated-content">
+      <h2 class="section-h">Gated content</h2>
+      <p class="section-lede">The real security boundary — content is only ever sent to the browser if the member's plan qualifies.</p>
+
+      <p>Create a content block from your site's <a href="/admin">dashboard</a> (Members → Gated Content), give it a <strong>key</strong> and the <strong>plan required</strong> to see it. Then reference that key on your page:</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>HTML</span><button class="copy-btn" type="button">Copy</button></div>
+        <pre><code>&lt;div data-ms-protected="premium-article" data-ms-fallback="upgrade-msg"&gt;&lt;/div&gt;
+&lt;div id="upgrade-msg" style="display:none"&gt;Upgrade to read this.&lt;/div&gt;</code></pre>
+      </div>
+
+      <table class="ref-table">
+        <thead><tr><th>Attribute</th><th>On</th><th>Value</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code class="inline">data-ms-protected</code></td><td>any element</td><td>the content block's key</td><td>Fetches that block from the server and fills the element's HTML with it — but only if the visitor's plan is allowed. If not, the element stays hidden and the actual content is never sent to the browser at all.</td></tr>
+          <tr><td><code class="inline">data-ms-fallback</code></td><td>the same element</td><td>an element's <code class="inline">id</code></td><td>Shown instead when the visitor doesn't qualify (e.g. an upgrade prompt). That element should start with <code class="inline">style="display:none"</code> so it's hidden until needed.</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout">
+        <strong>Why this is different</strong>
+        Everything else on this page (<code class="inline">data-ms-content</code>, <code class="inline">data-ms-plan</code>) hides elements client-side — the content is technically still in the page. Gated content is fetched from the server per-request and checked against the member's plan there, so non-qualifying visitors' browsers never receive it in the first place.
+      </div>
+    </section>
+
+    <section class="doc-section" id="js-api">
+      <h2 class="section-h">JavaScript API</h2>
+      <p class="section-lede">For custom interactions beyond what attributes cover, a small <code class="inline">window.FlowMember</code> object is always available.</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>JavaScript</span><button class="copy-btn" type="button">Copy</button></div>
+        <pre><code>FlowMember.isLoggedIn()   // true / false
+FlowMember.getMember()    // { id, email, plan } or null
+FlowMember.logout()       // clears the session in place (no redirect)</code></pre>
+      </div>
+
+      <p>Useful inside a Webflow page's custom "before <code class="inline">&lt;/body&gt;</code>" script, or an Embed element, for logic the attributes above don't cover.</p>
+    </section>
+
+    <section class="doc-section" id="member-dashboard">
+      <h2 class="section-h">Member dashboard</h2>
+      <p class="section-lede">A ready-made account page for your members — nothing to build.</p>
+
+      <p>Every site gets a self-service dashboard where members can log in, see their plan, and see which gated content they currently have access to. Copy the link from your site's dashboard (Members → Member dashboard link) and add it to your Webflow nav, e.g. as "My Account":</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>URL</span><button class="copy-btn" type="button">Copy</button></div>
+        <pre><code>https://YOUR-SERVER/member?site=YOUR_PUBLIC_KEY</code></pre>
+      </div>
+
+      <p>This is a separate page (not attribute-based) that FlowMember hosts and maintains for you — no design or build work required.</p>
+    </section>
+
+    <section class="doc-section" id="full-example">
+      <h2 class="section-h">Full example</h2>
+      <p class="section-lede">Everything above combined into one page.</p>
+
+      <div class="code-block">
+        <div class="code-block-head"><span>HTML</span><button class="copy-btn" type="button">Copy</button></div>
+        <pre><code>&lt;!-- once per page, usually in Footer Code --&gt;
+&lt;script src="https://YOUR-SERVER/sdk/flowmember.js"
+        data-site-id="YOUR_PUBLIC_KEY"&gt;&lt;/script&gt;
+
+&lt;!-- nav --&gt;
+&lt;div data-ms-content="visitor"&gt;
+  &lt;a href="/login"&gt;Log in&lt;/a&gt;
+&lt;/div&gt;
+&lt;div data-ms-content="member"&gt;
+  Hi, &lt;span data-ms-bind="email"&gt;&lt;/span&gt;
+  &lt;a href="#" data-ms-logout data-ms-redirect="/"&gt;Log out&lt;/a&gt;
+&lt;/div&gt;
+
+&lt;!-- login page --&gt;
+&lt;form data-ms-form="login" data-ms-redirect="/dashboard"&gt;
+  &lt;input type="email" name="email" required&gt;
+  &lt;input type="password" name="password" required&gt;
+  &lt;button type="submit"&gt;Log in&lt;/button&gt;
+&lt;/form&gt;
+
+&lt;!-- gated article --&gt;
+&lt;div data-ms-protected="q4-report" data-ms-fallback="q4-locked"&gt;&lt;/div&gt;
+&lt;div id="q4-locked" style="display:none"&gt;
+  &lt;div data-ms-plan="pro"&gt;Hmm, this shouldn't happen on Pro.&lt;/div&gt;
+  Upgrade to Pro to read the full report.
+&lt;/div&gt;</code></pre>
+      </div>
+    </section>
+
+    <section class="doc-section" id="reference">
+      <h2 class="section-h">Attribute reference</h2>
+      <p class="section-lede">Every attribute, in one table.</p>
+
+      <table class="ref-table">
+        <thead><tr><th>Attribute</th><th>Values</th><th>Where</th></tr></thead>
+        <tbody>
+          <tr><td><code class="inline">data-site-id</code></td><td>your public key</td><td><code class="inline">&lt;script&gt;</code> tag</td></tr>
+          <tr><td><code class="inline">data-api</code></td><td>server URL (optional)</td><td><code class="inline">&lt;script&gt;</code> tag</td></tr>
+          <tr><td><code class="inline">data-ms-form</code></td><td><code class="inline">signup</code> / <code class="inline">login</code></td><td>a <code class="inline">&lt;form&gt;</code> or its wrapper</td></tr>
+          <tr><td><code class="inline">data-ms-redirect</code></td><td>a URL/path</td><td>an auth form, or a logout element</td></tr>
+          <tr><td><code class="inline">data-ms-error</code></td><td>— (optional)</td><td>inside an auth form</td></tr>
+          <tr><td><code class="inline">data-ms-logout</code></td><td>— (presence only)</td><td>any clickable element</td></tr>
+          <tr><td><code class="inline">data-ms-content</code></td><td><code class="inline">member</code> / <code class="inline">visitor</code></td><td>any element</td></tr>
+          <tr><td><code class="inline">data-ms-plan</code></td><td>a plan name</td><td>any element</td></tr>
+          <tr><td><code class="inline">data-ms-bind</code></td><td><code class="inline">email</code> / <code class="inline">plan</code> / <code class="inline">id</code></td><td>any element</td></tr>
+          <tr><td><code class="inline">data-ms-protected</code></td><td>a content block key</td><td>any element</td></tr>
+          <tr><td><code class="inline">data-ms-fallback</code></td><td>an element's <code class="inline">id</code></td><td>a <code class="inline">data-ms-protected</code> element</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+  </main>
+</div>
+
+<footer class="doc-footer">
+  Need help? Head to your <a href="/admin">dashboard</a> for your site's exact embed code and member dashboard link — they're pre-filled with your public key.
+</footer>
+
+<script>
+  document.getElementById('menu-toggle').onclick = function () {
+    document.getElementById('sidebar').classList.toggle('open');
+  };
+
+  document.querySelectorAll('.copy-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var code = btn.closest('.code-block').querySelector('code').textContent;
+      navigator.clipboard.writeText(code).then(function () {
+        var original = btn.textContent;
+        btn.textContent = 'Copied!';
+        setTimeout(function () { btn.textContent = original; }, 1500);
+      }).catch(function () {});
+    });
+  });
+
+  // scroll-spy: highlight the sidebar link for whichever section is in view
+  var navLinks = Array.prototype.slice.call(document.querySelectorAll('.nav-link'));
+  var sections = Array.prototype.slice.call(document.querySelectorAll('.doc-section'));
+  var byId = {};
+  navLinks.forEach(function (a) { byId[a.getAttribute('href').slice(1)] = a; });
+
+  if ('IntersectionObserver' in window) {
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        var link = byId[entry.target.id];
+        if (!link) return;
+        if (entry.isIntersecting) {
+          navLinks.forEach(function (a) { a.classList.remove('active'); });
+          link.classList.add('active');
+        }
+      });
+    }, { rootMargin: '-15% 0px -70% 0px' });
+    sections.forEach(function (s) { observer.observe(s); });
+  }
+</script>
+</body>
+</html>

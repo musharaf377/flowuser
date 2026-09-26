@@ -34,9 +34,14 @@ const MIME = {
 
 function serveStatic(rootDir, urlPrefix) {
   return (req, res) => {
+    // Check for "/" against the raw URL-derived string (always uses forward
+    // slashes) before path.normalize touches it — on Windows,
+    // path.normalize('/') returns '\\', not '/', which used to make every
+    // trailing-slash request (e.g. /admin/) silently fail this check.
     const rel = decodeURIComponent(req.url.split('?')[0]).slice(urlPrefix.length) || '/index.html';
-    const safeRel = path.normalize(rel).replace(/^(\.\.[/\\])+/, '');
-    const filePath = path.join(rootDir, safeRel === '/' ? '/index.html' : safeRel);
+    const effectiveRel = rel === '/' ? '/index.html' : rel;
+    const safeRel = path.normalize(effectiveRel).replace(/^(\.\.[/\\])+/, '');
+    const filePath = path.join(rootDir, safeRel);
     if (!filePath.startsWith(rootDir)) {
       res.writeHead(403);
       res.end('Forbidden');
@@ -55,17 +60,22 @@ const serveSdk = serveStatic(path.join(PUBLIC_DIR, 'sdk'), '/sdk');
 const serveDemo = serveStatic(DEMO_DIR, '/demo');
 const serveHome = serveStatic(path.join(PUBLIC_DIR, 'home'), '/');
 const serveMember = serveStatic(path.join(PUBLIC_DIR, 'member'), '/member');
+const serveDocs = serveStatic(path.join(PUBLIC_DIR, 'docs'), '/docs');
 
 const server = http.createServer(async (req, res) => {
   await new Promise((resolve) => cors(req, res, resolve));
   if (res.writableEnded) return;
   await new Promise((resolve) => securityHeaders(req, res, resolve));
 
-  if (req.url.startsWith('/admin')) return void serveAdmin(req, res);
-  if (req.url.startsWith('/sdk')) return void serveSdk(req, res);
-  if (req.url.startsWith('/demo')) return void serveDemo(req, res);
-  if (req.url.startsWith('/member')) return void serveMember(req, res);
-  if (req.url === '/' || req.url.startsWith('/?')) return void serveHome(req, res);
+  // serveXxx returns false when it didn't handle the request (missing file,
+  // etc.) — fall through to the 404 below instead of leaving the connection
+  // hanging with no response at all.
+  if (req.url.startsWith('/admin') && serveAdmin(req, res)) return;
+  if (req.url.startsWith('/sdk') && serveSdk(req, res)) return;
+  if (req.url.startsWith('/demo') && serveDemo(req, res)) return;
+  if (req.url.startsWith('/member') && serveMember(req, res)) return;
+  if (req.url.startsWith('/docs') && serveDocs(req, res)) return;
+  if ((req.url === '/' || req.url.startsWith('/?')) && serveHome(req, res)) return;
 
   if (req.url === '/health') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
