@@ -49,6 +49,7 @@ function serveStatic(rootDir, urlPrefix) {
 const serveAdmin = serveStatic(path.join(PUBLIC_DIR, 'admin'), '/admin');
 const serveSdk = serveStatic(path.join(PUBLIC_DIR, 'sdk'), '/sdk');
 const serveDemo = serveStatic(DEMO_DIR, '/demo');
+const serveHome = serveStatic(path.join(PUBLIC_DIR, 'home'), '/');
 
 const server = http.createServer(async (req, res) => {
   await new Promise((resolve) => cors(req, res, resolve));
@@ -58,6 +59,7 @@ const server = http.createServer(async (req, res) => {
   if (req.url.startsWith('/admin')) return void serveAdmin(req, res);
   if (req.url.startsWith('/sdk')) return void serveSdk(req, res);
   if (req.url.startsWith('/demo')) return void serveDemo(req, res);
+  if (req.url === '/' || req.url.startsWith('/?')) return void serveHome(req, res);
 
   if (req.url === '/health') {
     res.writeHead(200, { 'Content-Type': 'application/json' });

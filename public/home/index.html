@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FlowMember — Membership for Webflow, without the code</title>
+<meta name="description" content="Add member signup, login, and gated content to any Webflow site. Free to start — no code, no backend.">
+<style>
+  :root {
+    --border: #e2e2e2;
+    --muted: #666;
+    --accent: #2d6cdf;
+    --accent-dark: #1f52ac;
+    --bg-soft: #f7f9fc;
+    --ink: #1b1b1b;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    margin: 0;
+    color: var(--ink);
+    line-height: 1.5;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+
+  header {
+    position: sticky;
+    top: 0;
+    background: #fff;
+    border-bottom: 1px solid var(--border);
+    z-index: 10;
+  }
+  nav {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .logo { font-weight: 700; font-size: 18px; color: var(--ink); }
+  .nav-links { display: flex; align-items: center; gap: 24px; }
+  .nav-links a.link { color: var(--muted); font-size: 14px; }
+  .nav-links a.link:hover { color: var(--ink); }
+
+  .btn {
+    display: inline-block;
+    padding: 10px 18px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid transparent;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: var(--accent-dark); }
+  .btn-ghost { background: #fff; color: var(--ink); border: 1px solid var(--border); }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-disabled { background: #eee; color: #999; cursor: default; }
+
+  section { padding: 72px 0; }
+  .hero { text-align: center; background: var(--bg-soft); }
+  .hero h1 { font-size: 40px; margin: 0 0 16px; letter-spacing: -0.5px; }
+  .hero p.sub { font-size: 18px; color: var(--muted); max-width: 560px; margin: 0 auto 32px; }
+  .hero .cta-row { display: flex; gap: 12px; justify-content: center; }
+  .hero .cta-row .btn { padding: 12px 22px; font-size: 15px; }
+
+  h2.section-title { font-size: 28px; text-align: center; margin: 0 0 8px; }
+  p.section-sub { text-align: center; color: var(--muted); margin: 0 0 48px; }
+
+  .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
+  .step { text-align: center; }
+  .step .num {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--accent); color: #fff; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 12px; font-size: 15px;
+  }
+  .step h3 { font-size: 16px; margin: 0 0 6px; }
+  .step p { font-size: 14px; color: var(--muted); margin: 0; }
+
+  .features { background: var(--bg-soft); }
+  .feature-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  .feature-card {
+    background: #fff; border: 1px solid var(--border); border-radius: 10px;
+    padding: 24px;
+  }
+  .feature-card .icon { font-size: 22px; margin-bottom: 10px; }
+  .feature-card h3 { font-size: 16px; margin: 0 0 8px; }
+  .feature-card p { font-size: 14px; color: var(--muted); margin: 0; }
+
+  .pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; align-items: stretch; }
+  .price-card {
+    border: 1px solid var(--border); border-radius: 10px; padding: 28px;
+    display: flex; flex-direction: column;
+  }
+  .price-card.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+  .price-card h3 { font-size: 18px; margin: 0 0 4px; }
+  .price-card .price { font-size: 30px; font-weight: 700; margin: 8px 0 4px; }
+  .price-card .price span { font-size: 14px; font-weight: 400; color: var(--muted); }
+  .price-card .tag {
+    display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 0.4px;
+    text-transform: uppercase; color: var(--accent); margin-bottom: 8px;
+  }
+  .price-card .tag.soon { color: var(--muted); }
+  .price-card ul { list-style: none; padding: 0; margin: 16px 0 24px; flex: 1; }
+  .price-card li { font-size: 14px; color: var(--ink); padding: 6px 0; padding-left: 22px; position: relative; }
+  .price-card li::before { content: "✓"; position: absolute; left: 0; color: var(--accent); font-weight: 700; }
+  .price-card.disabled li::before { color: #bbb; }
+  .price-card.disabled li { color: var(--muted); }
+  .price-card .btn { text-align: center; width: 100%; }
+
+  .final-cta { text-align: center; }
+  .final-cta h2 { font-size: 28px; margin: 0 0 12px; }
+  .final-cta p { color: var(--muted); margin: 0 0 28px; }
+
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 24px 0;
+    text-align: center;
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  @media (max-width: 800px) {
+    .steps, .feature-grid, .pricing-grid { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 30px; }
+    .nav-links .link { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <nav>
+    <span class="logo">FlowMember</span>
+    <div class="nav-links">
+      <a class="link" href="#how-it-works">How it works</a>
+      <a class="link" href="#pricing">Pricing</a>
+      <a class="link" href="/admin">Log in</a>
+      <a class="btn btn-primary" href="/admin">Get started free</a>
+    </div>
+  </nav>
+</header>
+
+<section class="hero">
+  <div class="wrap">
+    <h1>Membership for your Webflow site,<br>without writing a backend.</h1>
+    <p class="sub">Sign up your visitors, gate content by plan, and manage members from one dashboard — then drop in a single script tag. No code required.</p>
+    <div class="cta-row">
+      <a class="btn btn-primary" href="/admin">Get started free</a>
+      <a class="btn btn-ghost" href="#how-it-works">See how it works</a>
+    </div>
+  </div>
+</section>
+
+<section id="how-it-works">
+  <div class="wrap">
+    <h2 class="section-title">How it works</h2>
+    <p class="section-sub">Four steps from zero to a working member area.</p>
+    <div class="steps">
+      <div class="step">
+        <div class="num">1</div>
+        <h3>Create your account</h3>
+        <p>Sign up free — no credit card, no setup fees.</p>
+      </div>
+      <div class="step">
+        <div class="num">2</div>
+        <h3>Add your site</h3>
+        <p>Register your Webflow site in the dashboard in seconds.</p>
+      </div>
+      <div class="step">
+        <div class="num">3</div>
+        <h3>Copy the embed script</h3>
+        <p>Paste one script tag into your Webflow custom code settings.</p>
+      </div>
+      <div class="step">
+        <div class="num">4</div>
+        <h3>Gate your content</h3>
+        <p>Mark up any element as protected — FlowMember handles the rest.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="features">
+  <div class="wrap">
+    <h2 class="section-title">Everything a membership site needs</h2>
+    <p class="section-sub">Built for Webflow, works anywhere HTML does.</p>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="icon">🔐</div>
+        <h3>Signup &amp; login forms</h3>
+        <p>Drop data-attribute forms into any Webflow page — FlowMember wires up the auth for you.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">🎯</div>
+        <h3>Plan-based gating</h3>
+        <p>Show or hide any element based on a member's plan, with simple visibility rules.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">📄</div>
+        <h3>Protected content blocks</h3>
+        <p>Serve premium copy, downloads, or embeds only to members on the right plan.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">📊</div>
+        <h3>Admin dashboard</h3>
+        <p>See every member, change their plan, and manage your sites from one place.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">⚡</div>
+        <h3>One script tag</h3>
+        <p>A single embed script does form handling, gating, and content fetches — no build step.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">🆓</div>
+        <h3>Free to start</h3>
+        <p>Launch your first site and up to 100 members without paying anything.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="pricing">
+  <div class="wrap">
+    <h2 class="section-title">Simple pricing</h2>
+    <p class="section-sub">Start free. Paid plans are coming soon for teams that outgrow it.</p>
+    <div class="pricing-grid">
+      <div class="price-card active">
+        <span class="tag">Available now</span>
+        <h3>Free</h3>
+        <div class="price">$0<span>/month</span></div>
+        <ul>
+          <li>1 site</li>
+          <li>Up to 100 members</li>
+          <li>Signup &amp; login forms</li>
+          <li>Plan-based content gating</li>
+          <li>Admin dashboard</li>
+        </ul>
+        <a class="btn btn-primary" href="/admin">Get started free</a>
+      </div>
+      <div class="price-card disabled">
+        <span class="tag soon">Coming soon</span>
+        <h3>Pro</h3>
+        <div class="price">—</div>
+        <ul>
+          <li>Multiple sites</li>
+          <li>Unlimited members</li>
+          <li>Everything in Free</li>
+          <li>Priority support</li>
+        </ul>
+        <button class="btn btn-disabled" disabled>Coming soon</button>
+      </div>
+      <div class="price-card disabled">
+        <span class="tag soon">Coming soon</span>
+        <h3>Team</h3>
+        <div class="price">—</div>
+        <ul>
+          <li>Everything in Pro</li>
+          <li>Custom domain</li>
+          <li>Team seats</li>
+        </ul>
+        <button class="btn btn-disabled" disabled>Coming soon</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="final-cta">
+  <div class="wrap">
+    <h2>Ready to add membership to your site?</h2>
+    <p>It takes less time to set up than to read this page.</p>
+    <a class="btn btn-primary" href="/admin">Get started free</a>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    &copy; 2026 FlowMember. Built for Webflow sites.
+  </div>
+</footer>
+
+</body>
+</html>
