@@ -96,32 +96,57 @@
     el.textContent = message;
   }
 
+  // Webflow builders sometimes have two inputs both left as name="email"
+  // (one duplicated from the other and never renamed). Fall back to the
+  // input's `type` so the form still works even if `name` wasn't fixed.
+  function findField(form, name, type) {
+    return form.querySelector('[name="' + name + '"]') || form.querySelector('input[type="' + type + '"]');
+  }
+
   function handleAuthForm(form, kind) {
-    form.addEventListener('submit', function (e) {
-      e.preventDefault();
-      var email = form.querySelector('[name="email"]');
-      var password = form.querySelector('[name="password"]');
-      if (!email || !password) {
-        console.error('[FlowMember] Form needs name="email" and name="password" inputs.');
-        return;
-      }
-      api('/' + kind, {
-        method: 'POST',
-        body: { email: email.value, password: password.value },
-      })
-        .then(function (data) {
-          setSession(data.token, data.member);
-          var redirect = form.getAttribute('data-ms-redirect');
-          if (redirect) {
-            window.location.href = redirect;
-          } else {
-            window.location.reload();
-          }
+    // Capture phase + stopImmediatePropagation so this runs BEFORE (and
+    // blocks) Webflow's own default form-submit handler — otherwise
+    // Webflow will also show its "Thank you" message and try to send the
+    // form to its own (unrelated) form storage.
+    form.addEventListener(
+      'submit',
+      function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+
+        var email = findField(form, 'email', 'email');
+        var password = findField(form, 'password', 'password');
+        if (!email || !password) {
+          console.error('[FlowMember] Could not find an email/password input in this form.');
+          showFormError(form, 'Form setup issue: missing email or password field.');
+          return;
+        }
+        if (email === password) {
+          console.error('[FlowMember] The email and password inputs resolved to the same element — check their name/type attributes in Webflow.');
+          showFormError(form, 'Form setup issue: email and password look like the same field.');
+          return;
+        }
+
+        api('/' + kind, {
+          method: 'POST',
+          body: { email: email.value, password: password.value },
         })
-        .catch(function (err) {
-          showFormError(form, err.message);
-        });
-    });
+          .then(function (data) {
+            setSession(data.token, data.member);
+            var redirect = form.getAttribute('data-ms-redirect');
+            if (redirect) {
+              window.location.href = redirect;
+            } else {
+              window.location.reload();
+            }
+          })
+          .catch(function (err) {
+            showFormError(form, err.message);
+          });
+      },
+      true
+    );
   }
 
   function handleLogout(el) {
@@ -169,12 +194,26 @@
     });
   }
 
+  // Accepts the attribute on the <form> itself OR on a wrapper div around it
+  // (Webflow's Form Block puts a div around the real <form>, and it's easy
+  // to attach the custom attribute to the wrong one in the Designer).
+  function resolveForm(el) {
+    if (el.tagName === 'FORM') return el;
+    var inner = el.querySelector('form');
+    if (!inner) {
+      console.error('[FlowMember] data-ms-form was set on an element with no <form> inside it.', el);
+    }
+    return inner;
+  }
+
   function init() {
-    document.querySelectorAll('[data-ms-form="signup"]').forEach(function (f) {
-      handleAuthForm(f, 'signup');
+    document.querySelectorAll('[data-ms-form="signup"]').forEach(function (el) {
+      var form = resolveForm(el);
+      if (form) handleAuthForm(form, 'signup');
     });
-    document.querySelectorAll('[data-ms-form="login"]').forEach(function (f) {
-      handleAuthForm(f, 'login');
+    document.querySelectorAll('[data-ms-form="login"]').forEach(function (el) {
+      var form = resolveForm(el);
+      if (form) handleAuthForm(form, 'login');
     });
     document.querySelectorAll('[data-ms-logout]').forEach(handleLogout);
 
