@@ -10,6 +10,7 @@ const ownerRoutes = require('./routes/owner');
 const siteRoutes = require('./routes/sites');
 const memberRoutes = require('./routes/member');
 const planRoutes = require('./routes/plans');
+const billingRoutes = require('./routes/billing');
 
 const PORT = process.env.PORT || 3000;
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
@@ -20,6 +21,7 @@ api.routes.push(...ownerRoutes.routes);
 api.routes.push(...siteRoutes.routes);
 api.routes.push(...memberRoutes.routes);
 api.routes.push(...planRoutes.routes);
+api.routes.push(...billingRoutes.routes);
 
 const authLimiter = rateLimit({ windowMs: 60_000, max: 20 });
 

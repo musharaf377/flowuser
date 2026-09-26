@@ -11,7 +11,7 @@ router.post('/api/sites', requireOwnerAuth, async (req, res) => {
   const { name } = req.body;
   if (!name || !name.trim()) throw httpError(400, 'Site name is required');
 
-  const owner = await db.get('SELECT plan, is_super_admin FROM owners WHERE id = ?', [req.owner.id]);
+  const owner = await db.get('SELECT plan, plan_expires_at, is_super_admin FROM owners WHERE id = ?', [req.owner.id]);
   const plan = getEffectivePlan(owner);
   const { count } = await db.get('SELECT COUNT(*) as count FROM sites WHERE owner_id = ?', [req.owner.id]);
   if (count >= plan.maxSites) {

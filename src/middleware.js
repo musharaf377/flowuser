@@ -5,7 +5,10 @@ const db = require('./db');
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-me';
 
 // ---- body parsing ----
-function readJsonBody(req) {
+// Handles both JSON (everything in this app) and
+// application/x-www-form-urlencoded (SSLCommerz posts its IPN and
+// success/fail/cancel redirects as form data, not JSON).
+function readRawBody(req) {
   return new Promise((resolve, reject) => {
     let data = '';
     let size = 0;
@@ -19,14 +22,7 @@ function readJsonBody(req) {
       }
       data += chunk;
     });
-    req.on('end', () => {
-      if (!data) return resolve({});
-      try {
-        resolve(JSON.parse(data));
-      } catch {
-        reject(httpError(400, 'Invalid JSON body'));
-      }
-    });
+    req.on('end', () => resolve(data));
     req.on('error', reject);
   });
 }
@@ -37,7 +33,19 @@ async function jsonBody(req, res, next) {
     req.body = {};
     return next();
   }
-  req.body = await readJsonBody(req);
+  const raw = await readRawBody(req);
+  if (!raw) {
+    req.body = {};
+    return next();
+  }
+  const contentType = req.headers['content-type'] || '';
+  try {
+    req.body = contentType.includes('application/x-www-form-urlencoded')
+      ? Object.fromEntries(new URLSearchParams(raw))
+      : JSON.parse(raw);
+  } catch {
+    return next(httpError(400, 'Invalid request body'));
+  }
   next();
 }
 

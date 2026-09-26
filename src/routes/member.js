@@ -36,7 +36,9 @@ router.post('/api/m/:publicKey/signup', loadSiteByPublicKey, async (req, res) =>
   ]);
   if (existing) throw httpError(409, 'An account with this email already exists');
 
-  const owner = await db.get('SELECT plan, is_super_admin FROM owners WHERE id = ?', [req.site.owner_id]);
+  const owner = await db.get('SELECT plan, plan_expires_at, is_super_admin FROM owners WHERE id = ?', [
+    req.site.owner_id,
+  ]);
   const plan = getEffectivePlan(owner);
   const { count } = await db.get('SELECT COUNT(*) as count FROM members WHERE site_id = ?', [req.site.id]);
   if (count >= plan.maxMembersPerSite) {

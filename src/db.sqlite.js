@@ -25,6 +25,7 @@ db.exec(`
     email TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
     plan TEXT NOT NULL DEFAULT 'free',
+    plan_expires_at INTEGER,
     is_super_admin INTEGER NOT NULL DEFAULT 0,
     created_at INTEGER NOT NULL
   );
@@ -60,6 +61,20 @@ db.exec(`
     UNIQUE(site_id, key),
     FOREIGN KEY (site_id) REFERENCES sites(id)
   );
+
+  CREATE TABLE IF NOT EXISTS payments (
+    id TEXT PRIMARY KEY,
+    owner_id TEXT NOT NULL,
+    plan TEXT NOT NULL,
+    amount INTEGER NOT NULL,
+    currency TEXT NOT NULL DEFAULT 'BDT',
+    tran_id TEXT UNIQUE NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending',
+    val_id TEXT,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL,
+    FOREIGN KEY (owner_id) REFERENCES owners(id)
+  );
 `);
 
 // migrate: databases created before these owners columns existed
@@ -69,6 +84,9 @@ if (!ownerColumns.some((c) => c.name === 'plan')) {
 }
 if (!ownerColumns.some((c) => c.name === 'is_super_admin')) {
   db.exec("ALTER TABLE owners ADD COLUMN is_super_admin INTEGER NOT NULL DEFAULT 0");
+}
+if (!ownerColumns.some((c) => c.name === 'plan_expires_at')) {
+  db.exec("ALTER TABLE owners ADD COLUMN plan_expires_at INTEGER");
 }
 
 function run(sql, params = []) {

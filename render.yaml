@@ -24,3 +24,9 @@ services:
         sync: false
       - key: SUPER_ADMIN_EMAILS
         sync: false
+      - key: SSLCOMMERZ_STORE_ID
+        sync: false
+      - key: SSLCOMMERZ_STORE_PASSWORD
+        sync: false
+      - key: SSLCOMMERZ_IS_LIVE
+        value: "false"

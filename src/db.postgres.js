@@ -1,22 +1,8 @@
-// db.postgres.js — REFERENCE FILE for when you buy real hosting.
+// db.postgres.js — Postgres storage backend.
 //
-// This is NOT wired in yet. It mirrors db.js's exports (run/get/all) but
-// talks to Postgres instead of the local SQLite file, so the rest of the
-// app doesn't need to change — you just swap which file gets required.
-//
-// To switch to this:
-//   1. On your own machine (not needed in this sandbox), run:
-//        npm install pg
-//   2. Set DATABASE_URL in your .env, e.g. the connection string Neon or
-//      Render Postgres gives you (postgres://user:pass@host/dbname).
-//   3. In every file that does `require('./db')` or `require('../db')`,
-//      point it at this file instead (or rename this file to db.js and
-//      rename the old one to db.sqlite.js — either works).
-//
-// This file has not been run against a live Postgres instance in this
-// session (outbound Postgres connections aren't reachable from this
-// sandbox), but it uses the standard, well-documented `pg` API — test it
-// against your own Neon/Render database before relying on it.
+// db.js picks this automatically when DATABASE_URL is set (see db.js) — no
+// manual require-swapping needed. Mirrors db.sqlite.js's exports (run/get/
+// all), just async since the `pg` driver is async.
 
 const { Pool } = require('pg');
 
@@ -33,11 +19,13 @@ const SCHEMA = `
     email TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
     plan TEXT NOT NULL DEFAULT 'free',
+    plan_expires_at BIGINT,
     is_super_admin BOOLEAN NOT NULL DEFAULT FALSE,
     created_at BIGINT NOT NULL
   );
   ALTER TABLE owners ADD COLUMN IF NOT EXISTS plan TEXT NOT NULL DEFAULT 'free';
   ALTER TABLE owners ADD COLUMN IF NOT EXISTS is_super_admin BOOLEAN NOT NULL DEFAULT FALSE;
+  ALTER TABLE owners ADD COLUMN IF NOT EXISTS plan_expires_at BIGINT;
 
   CREATE TABLE IF NOT EXISTS sites (
     id TEXT PRIMARY KEY,
@@ -66,6 +54,19 @@ const SCHEMA = `
     body TEXT NOT NULL DEFAULT '',
     created_at BIGINT NOT NULL,
     UNIQUE(site_id, key)
+  );
+
+  CREATE TABLE IF NOT EXISTS payments (
+    id TEXT PRIMARY KEY,
+    owner_id TEXT NOT NULL REFERENCES owners(id),
+    plan TEXT NOT NULL,
+    amount INTEGER NOT NULL,
+    currency TEXT NOT NULL DEFAULT 'BDT',
+    tran_id TEXT UNIQUE NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending',
+    val_id TEXT,
+    created_at BIGINT NOT NULL,
+    updated_at BIGINT NOT NULL
   );
 `;
 

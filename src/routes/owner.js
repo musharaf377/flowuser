@@ -2,7 +2,7 @@ const { Router, httpError } = require('../router');
 const db = require('../db');
 const auth = require('../auth');
 const { JWT_SECRET, requireOwnerAuth } = require('../middleware');
-const { DEFAULT_PLAN } = require('../plans');
+const { DEFAULT_PLAN, PAID_PLANS } = require('../plans');
 
 const router = new Router();
 
@@ -19,8 +19,28 @@ function isSuperAdminEmail(email) {
   return list.includes(String(email).toLowerCase());
 }
 
+// A paid plan bought via billing.js only lasts PLAN_DURATION_MS (SSLCommerz's
+// basic checkout is a one-time charge, not auto-recurring — see plans.js).
+// Called wherever an owner row is loaded somewhere the *current* plan
+// matters, so an expired plan reliably downgrades back to Free in the DB
+// instead of silently staying "pro" forever after the access period ends.
+async function syncOwnerPlan(owner) {
+  if (PAID_PLANS.includes(owner.plan) && owner.plan_expires_at && owner.plan_expires_at < Date.now()) {
+    await db.run('UPDATE owners SET plan = ?, plan_expires_at = NULL WHERE id = ?', [DEFAULT_PLAN, owner.id]);
+    owner.plan = DEFAULT_PLAN;
+    owner.plan_expires_at = null;
+  }
+  return owner;
+}
+
 function ownerOut(owner) {
-  return { id: owner.id, email: owner.email, plan: owner.plan, isSuperAdmin: !!owner.is_super_admin };
+  return {
+    id: owner.id,
+    email: owner.email,
+    plan: owner.plan,
+    planExpiresAt: owner.plan_expires_at || null,
+    isSuperAdmin: !!owner.is_super_admin,
+  };
 }
 
 router.post('/api/owner/signup', async (req, res) => {
@@ -48,7 +68,7 @@ router.post('/api/owner/login', async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) throw httpError(400, 'Email and password required');
 
-  const owner = await db.get('SELECT * FROM owners WHERE email = ?', [String(email).toLowerCase()]);
+  let owner = await db.get('SELECT * FROM owners WHERE email = ?', [String(email).toLowerCase()]);
   if (!owner || !auth.verifyPassword(password, owner.password_hash)) {
     throw httpError(401, 'Invalid email or password');
   }
@@ -58,6 +78,7 @@ router.post('/api/owner/login', async (req, res) => {
     await db.run('UPDATE owners SET is_super_admin = 1 WHERE id = ?', [owner.id]);
     owner.is_super_admin = 1;
   }
+  owner = await syncOwnerPlan(owner);
 
   const token = auth.sign({ sub: owner.id, email: owner.email, type: 'owner' }, JWT_SECRET);
   res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -65,10 +86,16 @@ router.post('/api/owner/login', async (req, res) => {
 });
 
 router.get('/api/owner/me', requireOwnerAuth, async (req, res) => {
-  const owner = await db.get('SELECT id, email, plan, is_super_admin FROM owners WHERE id = ?', [req.owner.id]);
+  let owner = await db.get('SELECT id, email, plan, plan_expires_at, is_super_admin FROM owners WHERE id = ?', [
+    req.owner.id,
+  ]);
   if (!owner) throw httpError(404, 'Owner not found');
+  owner = await syncOwnerPlan(owner);
   res.writeHead(200, { 'Content-Type': 'application/json' });
   res.end(JSON.stringify({ owner: ownerOut(owner) }));
 });
 
 module.exports = router;
+module.exports.isSuperAdminEmail = isSuperAdminEmail;
+module.exports.syncOwnerPlan = syncOwnerPlan;
+module.exports.ownerOut = ownerOut;

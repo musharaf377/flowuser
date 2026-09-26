@@ -570,6 +570,21 @@
 
     <div id="app-view">
 
+      <div id="billing-banner" class="card" style="display:none"></div>
+
+      <div class="card">
+        <div class="row between">
+          <h2 style="margin:0">Your plan <span class="badge" id="current-plan-badge"></span></h2>
+        </div>
+        <p class="muted" id="plan-expiry-note" style="display:none"></p>
+        <div class="row" id="upgrade-buttons" style="margin-top:12px; flex-wrap:wrap;">
+          <button class="secondary" id="upgrade-pro-btn" data-plan="pro">Upgrade to Pro — ৳999/month</button>
+          <button class="secondary" id="upgrade-business-btn" data-plan="business">Upgrade to Business —
+            ৳2,999/month</button>
+        </div>
+        <div id="billing-error" class="error"></div>
+      </div>
+
       <div class="card">
         <div class="row between">
           <h2 style="margin:0">Your sites <span class="badge" id="sites-usage"></span></h2>
@@ -1080,6 +1095,67 @@
       });
     };
 
+    function renderBillingCard() {
+      const plan = effectivePlanFor(currentOwner);
+      document.getElementById('current-plan-badge').textContent = plan.name;
+      document.getElementById('upgrade-pro-btn').textContent = `Upgrade to Pro — ৳${planFor('pro').priceBDT}/month`;
+      document.getElementById('upgrade-business-btn').textContent = `Upgrade to Business — ৳${planFor('business').priceBDT}/month`;
+
+      const note = document.getElementById('plan-expiry-note');
+      if (plan.id !== 'free' && currentOwner.planExpiresAt) {
+        note.style.display = '';
+        note.textContent = `Access until ${new Date(currentOwner.planExpiresAt).toLocaleDateString()} — pay again before then to keep it.`;
+      } else {
+        note.style.display = 'none';
+      }
+
+      document.getElementById('upgrade-pro-btn').style.display = plan.id === 'free' ? '' : 'none';
+      document.getElementById('upgrade-business-btn').style.display = plan.id === 'business' ? 'none' : '';
+    }
+
+    async function startCheckout(planId) {
+      document.getElementById('billing-error').textContent = '';
+      const btn = document.getElementById(planId === 'pro' ? 'upgrade-pro-btn' : 'upgrade-business-btn');
+      await withLoading(btn, 'Redirecting…', async () => {
+        try {
+          const data = await req('/api/billing/checkout', { method: 'POST', body: JSON.stringify({ plan: planId }) });
+          window.location.href = data.redirectUrl;
+        } catch (e) {
+          document.getElementById('billing-error').textContent = e.message;
+        }
+      });
+    }
+    document.getElementById('upgrade-pro-btn').onclick = () => startCheckout('pro');
+    document.getElementById('upgrade-business-btn').onclick = () => startCheckout('business');
+
+    function handleBillingQueryParams() {
+      const params = new URLSearchParams(window.location.search);
+      const billingStatus = params.get('billing');
+      if (billingStatus) {
+        const banner = document.getElementById('billing-banner');
+        banner.style.display = '';
+        if (billingStatus === 'success') {
+          banner.innerHTML = '<strong>Payment received!</strong> Your plan updates within a few seconds — this page will refresh it shortly.';
+          setTimeout(async () => {
+            const data = await req('/api/owner/me');
+            currentOwner = data.owner;
+            renderBillingCard();
+          }, 3000);
+        } else if (billingStatus === 'cancel') {
+          banner.innerHTML = 'Checkout was cancelled — no charge was made.';
+        } else {
+          banner.innerHTML = '<strong>Payment failed.</strong> No charge was made — try again or use a different payment method.';
+        }
+        window.history.replaceState({}, '', '/admin');
+      }
+
+      const upgradeIntent = params.get('upgrade');
+      if (upgradeIntent === 'pro' || upgradeIntent === 'business') {
+        window.history.replaceState({}, '', '/admin');
+        startCheckout(upgradeIntent);
+      }
+    }
+
     async function boot() {
       if (!token) return show('auth');
       try {
@@ -1087,11 +1163,14 @@
           const data = await req('/api/owner/me');
           currentOwner = data.owner;
         }
+        await loadPlansConfig();
         await loadSites();
         show('app');
         document.getElementById('whoami').textContent = currentOwner.email;
         document.getElementById('whoami-avatar').textContent = currentOwner.email[0].toUpperCase();
         document.getElementById('super-admin-badge').style.display = currentOwner.isSuperAdmin ? '' : 'none';
+        renderBillingCard();
+        handleBillingQueryParams();
       } catch (e) {
         token = null;
         localStorage.removeItem('fm_admin_token');
