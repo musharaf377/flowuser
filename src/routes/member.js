@@ -10,7 +10,7 @@ const {
   requireMemberAuth,
   optionalMemberAuth,
 } = require('../middleware');
-const { getPlan } = require('../plans');
+const { getEffectivePlan } = require('../plans');
 
 const router = new Router();
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -36,8 +36,8 @@ router.post('/api/m/:publicKey/signup', loadSiteByPublicKey, async (req, res) =>
   ]);
   if (existing) throw httpError(409, 'An account with this email already exists');
 
-  const owner = await db.get('SELECT plan FROM owners WHERE id = ?', [req.site.owner_id]);
-  const plan = getPlan(owner.plan);
+  const owner = await db.get('SELECT plan, is_super_admin FROM owners WHERE id = ?', [req.site.owner_id]);
+  const plan = getEffectivePlan(owner);
   const { count } = await db.get('SELECT COUNT(*) as count FROM members WHERE site_id = ?', [req.site.id]);
   if (count >= plan.maxMembersPerSite) {
     throw httpError(403, 'This site has reached its member limit for the current plan. Contact the site owner.');

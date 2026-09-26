@@ -2,7 +2,7 @@ const { Router, httpError } = require('../router');
 const db = require('../db');
 const auth = require('../auth');
 const { requireOwnerAuth } = require('../middleware');
-const { getPlan } = require('../plans');
+const { getEffectivePlan } = require('../plans');
 
 const router = new Router();
 
@@ -11,8 +11,8 @@ router.post('/api/sites', requireOwnerAuth, async (req, res) => {
   const { name } = req.body;
   if (!name || !name.trim()) throw httpError(400, 'Site name is required');
 
-  const owner = await db.get('SELECT plan FROM owners WHERE id = ?', [req.owner.id]);
-  const plan = getPlan(owner.plan);
+  const owner = await db.get('SELECT plan, is_super_admin FROM owners WHERE id = ?', [req.owner.id]);
+  const plan = getEffectivePlan(owner);
   const { count } = await db.get('SELECT COUNT(*) as count FROM sites WHERE owner_id = ?', [req.owner.id]);
   if (count >= plan.maxSites) {
     throw httpError(

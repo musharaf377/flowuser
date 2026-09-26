@@ -1,5 +1,5 @@
 const { Router } = require('../router');
-const { PLANS, DEFAULT_PLAN } = require('../plans');
+const { PLANS, DEFAULT_PLAN, UNLIMITED } = require('../plans');
 
 const router = new Router();
 
@@ -8,7 +8,7 @@ const router = new Router();
 // limits instead of hardcoding copies that can drift from plans.js.
 router.get('/api/plans', async (req, res) => {
   res.writeHead(200, { 'Content-Type': 'application/json' });
-  res.end(JSON.stringify({ plans: PLANS, defaultPlan: DEFAULT_PLAN }));
+  res.end(JSON.stringify({ plans: PLANS, defaultPlan: DEFAULT_PLAN, unlimited: UNLIMITED }));
 });
 
 module.exports = router;

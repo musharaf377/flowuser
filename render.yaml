@@ -22,3 +22,5 @@ services:
         value: 3000
       - key: DATABASE_URL
         sync: false
+      - key: SUPER_ADMIN_EMAILS
+        sync: false

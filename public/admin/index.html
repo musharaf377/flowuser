@@ -115,6 +115,7 @@
   <div class="row" id="topbar-account" style="display:none">
     <span class="avatar" id="whoami-avatar"></span>
     <span class="muted" id="whoami"></span>
+    <span class="badge" id="super-admin-badge" style="display:none">Super Admin</span>
     <button class="ghost" id="logout-btn">Log out</button>
   </div>
 </header>
@@ -246,6 +247,16 @@ function planFor(planId) {
   return plansConfig.plans[planId] || plansConfig.plans[plansConfig.defaultPlan];
 }
 
+// super admins bypass their own `plan` column entirely — always unlimited
+function effectivePlanFor(owner) {
+  if (owner.isSuperAdmin) return { ...plansConfig.plans.business, name: 'Super Admin' };
+  return planFor(owner.plan);
+}
+
+function isUnlimited(n) {
+  return n >= plansConfig.unlimited;
+}
+
 function authHeaders() {
   return token ? { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' };
 }
@@ -293,10 +304,10 @@ async function showWelcome() {
   list.innerHTML = '';
   try {
     await loadPlansConfig();
-    const plan = planFor(currentOwner.plan);
+    const plan = effectivePlanFor(currentOwner);
     const lines = [
-      `${plan.maxSites} site${plan.maxSites === 1 ? '' : 's'}`,
-      `Up to ${plan.maxMembersPerSite} members`,
+      isUnlimited(plan.maxSites) ? 'Unlimited sites' : `${plan.maxSites} site${plan.maxSites === 1 ? '' : 's'}`,
+      isUnlimited(plan.maxMembersPerSite) ? 'Unlimited members' : `Up to ${plan.maxMembersPerSite} members`,
       'Signup & login forms',
       'Plan-based content gating',
       'Admin dashboard',
@@ -397,10 +408,13 @@ async function loadSites() {
 
 async function renderSitesUsage() {
   await loadPlansConfig();
-  const plan = planFor(currentOwner.plan);
-  const atLimit = sites.length >= plan.maxSites;
+  const plan = effectivePlanFor(currentOwner);
+  const unlimited = isUnlimited(plan.maxSites);
+  const atLimit = !unlimited && sites.length >= plan.maxSites;
   const usageEl = document.getElementById('sites-usage');
-  usageEl.textContent = `${sites.length} / ${plan.maxSites} site${plan.maxSites === 1 ? '' : 's'} used`;
+  usageEl.textContent = unlimited
+    ? `${sites.length} sites (unlimited)`
+    : `${sites.length} / ${plan.maxSites} site${plan.maxSites === 1 ? '' : 's'} used`;
   usageEl.classList.toggle('limit', atLimit);
   document.getElementById('create-site-btn').disabled = atLimit;
   document.getElementById('new-site-name').disabled = atLimit;
@@ -523,6 +537,7 @@ async function boot() {
     show('app');
     document.getElementById('whoami').textContent = currentOwner.email;
     document.getElementById('whoami-avatar').textContent = currentOwner.email[0].toUpperCase();
+    document.getElementById('super-admin-badge').style.display = currentOwner.isSuperAdmin ? '' : 'none';
   } catch (e) {
     token = null;
     localStorage.removeItem('fm_admin_token');

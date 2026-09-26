@@ -25,6 +25,7 @@ db.exec(`
     email TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
     plan TEXT NOT NULL DEFAULT 'free',
+    is_super_admin INTEGER NOT NULL DEFAULT 0,
     created_at INTEGER NOT NULL
   );
 
@@ -61,10 +62,13 @@ db.exec(`
   );
 `);
 
-// migrate: databases created before the owners.plan column existed
+// migrate: databases created before these owners columns existed
 const ownerColumns = db.prepare("PRAGMA table_info(owners)").all();
 if (!ownerColumns.some((c) => c.name === 'plan')) {
   db.exec("ALTER TABLE owners ADD COLUMN plan TEXT NOT NULL DEFAULT 'free'");
+}
+if (!ownerColumns.some((c) => c.name === 'is_super_admin')) {
+  db.exec("ALTER TABLE owners ADD COLUMN is_super_admin INTEGER NOT NULL DEFAULT 0");
 }
 
 function run(sql, params = []) {
