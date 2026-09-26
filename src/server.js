@@ -9,6 +9,7 @@ const { jsonBody, cors, securityHeaders, rateLimit } = require('./middleware');
 const ownerRoutes = require('./routes/owner');
 const siteRoutes = require('./routes/sites');
 const memberRoutes = require('./routes/member');
+const planRoutes = require('./routes/plans');
 
 const PORT = process.env.PORT || 3000;
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
@@ -18,6 +19,7 @@ const api = new Router();
 api.routes.push(...ownerRoutes.routes);
 api.routes.push(...siteRoutes.routes);
 api.routes.push(...memberRoutes.routes);
+api.routes.push(...planRoutes.routes);
 
 const authLimiter = rateLimit({ windowMs: 60_000, max: 20 });
 
